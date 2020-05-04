@@ -34,13 +34,18 @@ type ApplicationScreen struct {
 // Application is base struct for create text UI.
 type Application struct {
 	// Main window.
-	MainWindow TComponent
+	mainWindow TComponent
 	// Quit application on Ctrl+C.
 	ExitOnCtrlC bool
 	// Screen application.
 	Screen ApplicationScreen
 	// Internal screen.
 	screen tcell.Screen
+}
+
+// MainWindow return main windows.
+func (a Application) MainWindow() TComponent {
+	return a.mainWindow
 }
 
 // SetEncodingFallback changes the behavior of GetEncoding when a suitable
@@ -75,7 +80,7 @@ func (a Application) Run() {
 	doContinue := true
 
 	// First time send draw message to create screen.
-	SendMessage(BuildDrawMessage(a.MainWindow.Handler()))
+	SendMessage(BuildDrawMessage(a.mainWindow.Handler()))
 
 	go poolEvent(a.screen)
 
@@ -86,16 +91,18 @@ func (a Application) Run() {
 	for doContinue {
 		currentMessage = <-busChannel
 
+		// TODO if mainWindow close, exit application
+
 		if currentMessage.Type == WmKey && a.ExitOnCtrlC {
 			if currentMessage.Value.(*tcell.EventKey).Key() == tcell.KeyCtrlC {
 				doContinue = false
 			} else {
-				a.MainWindow.HandleMessage(currentMessage)
+				a.mainWindow.HandleMessage(currentMessage)
 			}
 		} else if currentMessage.Type == WmQuit {
 			doContinue = false
 		} else {
-			a.MainWindow.HandleMessage(currentMessage)
+			a.mainWindow.HandleMessage(currentMessage)
 
 			if currentMessage.Type == WmDraw && previousMessageType != WmDraw {
 				a.screen.Sync()
@@ -153,7 +160,7 @@ func NewApplication(mainWindow TComponent) (Application, error) {
 	}
 
 	app := Application{
-		MainWindow:  mainWindow,
+		mainWindow:  mainWindow,
 		screen:      s,
 		Screen:      screen,
 		ExitOnCtrlC: true,
