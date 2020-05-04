@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	base "govision"
+	base "github.com/emeric-martineau/govision"
 )
 
 func TestTime_OnTimer_function(t *testing.T) {

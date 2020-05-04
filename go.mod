@@ -1,4 +1,4 @@
-module govision
+module github.com/emeric-martineau/govision
 
 go 1.14
 

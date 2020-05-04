@@ -21,7 +21,8 @@ import (
 // TComponent is the base object of all widget.
 type TComponent interface {
 	// Call when receive a message.
-	HandleMessage(Message) // TODO return true if stop loop because message are manage by client
+	// Return true if stop loop because message are manage by client.
+	HandleMessage(Message) bool
 	// Name of component.
 	Name() string
 	// Handler of component (UUID).

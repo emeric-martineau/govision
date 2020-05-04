@@ -17,7 +17,7 @@ package components
 import (
 	"time"
 
-	base "govision"
+	base "github.com/emeric-martineau/govision"
 )
 
 // OnTimer is callback when timer is done.

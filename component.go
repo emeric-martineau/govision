@@ -25,7 +25,8 @@ type OnEnabled func(TComponent, bool) bool
 
 // OnReceiveMessage is call when component receive message and you want overide
 // behavior.
-type OnReceiveMessage func(TComponent, Message)
+// Return true to stop message propagation.
+type OnReceiveMessage func(TComponent, Message) bool
 
 // Component is the base object of all widget.
 type Component struct {
@@ -48,6 +49,7 @@ type Component struct {
 }
 
 // Manage message if it's for me.
+// Return true to stop message propagation.
 func (c *Component) manageMyMessage(msg Message) {
 	if c.OnReceiveMessage != nil {
 		c.OnReceiveMessage(c, msg)
@@ -64,21 +66,33 @@ func (c *Component) manageMyMessage(msg Message) {
 }
 
 // HandleMessage is use to manage message and give message to children.
-func (c *Component) HandleMessage(msg Message) {
+func (c *Component) HandleMessage(msg Message) bool {
+	var isStop bool
+
 	switch msg.Handler {
 	case c.handler:
 		// For me
-		c.manageMyMessage(msg)
+                c.manageMyMessage(msg)
+		isStop = true
 	case BroadcastHandler():
 		// For me and my children
+		isStop = false
 		c.manageMyMessage(msg)
-		fallthrough
-	default:
+
 		// For my children
 		for _, child := range c.children {
 			child.HandleMessage(msg)
 		}
+	default:
+		// For my children
+		for _, child := range c.children {
+			if child.HandleMessage(msg) {
+				return true
+			}
+		}
 	}
+
+	return isStop
 }
 
 func (c *Component) reorderChildren() {

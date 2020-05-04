@@ -16,10 +16,11 @@ package main
 
 import (
 	"fmt"
-	base "govision"
-	"govision/components"
 	"os"
 	"time"
+
+	base "github.com/emeric-martineau/govision"
+	"github.com/emeric-martineau/govision/components"
 
 	"github.com/gdamore/tcell"
 )

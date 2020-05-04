@@ -129,7 +129,7 @@ func TestComponent_Message_draw_send_to_a_child(t *testing.T) {
 
 	c1.AddChild(&c2)
 
-	c2.OnReceiveMessage = func(c TComponent, m Message) {
+	c2.OnReceiveMessage = func(c TComponent, m Message) bool {
 		isCalled = true
 
 		if c != &c2 {
@@ -139,6 +139,8 @@ func TestComponent_Message_draw_send_to_a_child(t *testing.T) {
 		if m.Type != WmDraw {
 			t.Errorf("Normally, 'WmDraw' but found '%d'", m.Type)
 		}
+
+		return false
 	}
 
 	c1.HandleMessage(Message{
@@ -161,7 +163,7 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 
 	c1.AddChild(&c2)
 
-	c1.OnReceiveMessage = func(c TComponent, m Message) {
+	c1.OnReceiveMessage = func(c TComponent, m Message) bool {
 		isCalledMain = true
 
 		if c != &c1 {
@@ -171,9 +173,11 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 		if m.Type != WmDraw {
 			t.Errorf("Normally, 'WmDraw' but found '%d'", m.Type)
 		}
+
+		return false
 	}
 
-	c2.OnReceiveMessage = func(c TComponent, m Message) {
+	c2.OnReceiveMessage = func(c TComponent, m Message) bool {
 		isCalledChild = true
 
 		if c != &c2 {
@@ -183,6 +187,8 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 		if m.Type != WmDraw {
 			t.Errorf("Normally, 'WmDraw' but found '%d'", m.Type)
 		}
+
+		return false
 	}
 
 	c1.HandleMessage(Message{

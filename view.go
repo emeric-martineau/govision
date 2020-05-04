@@ -129,6 +129,7 @@ func (v *View) GetScreen() tcell.Screen {
 }
 
 // Manage message if it's for me.
+// Return true to stop message propagation.
 func (v *View) manageMyMessage(msg Message) {
 	switch msg.Type {
 	case WmDraw:
@@ -136,7 +137,8 @@ func (v *View) manageMyMessage(msg Message) {
 			v.OnDraw(v, v.GetScreen())
 		} else {
 			v.Draw()
-			// Redraw children is automatically send after.
+			// Redraw children.
+                        v.Component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
 		}
 	case WmChangeBounds:
 		v.bounds = msg.Value.(Rect)
@@ -146,16 +148,17 @@ func (v *View) manageMyMessage(msg Message) {
 }
 
 // HandleMessage is use to manage message.
-func (v *View) HandleMessage(msg Message) {
+func (v *View) HandleMessage(msg Message) bool {
 	switch msg.Handler {
 	case v.Handler():
-		fallthrough
+		v.manageMyMessage(msg)
+		return true
 	case BroadcastHandler():
 		v.manageMyMessage(msg)
 	}
 
 	// Because Component send message to child if broadcast or draw.
-	v.Component.HandleMessage(msg)
+	return v.Component.HandleMessage(msg)
 }
 
 // NewView create new timer.
