@@ -141,8 +141,7 @@ func TestHelper_Intersect_Rectangle1_no_intersect_rectangle2(t *testing.T) {
 
 // All components are visible.
 func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.T) {
-	s := mkTestScreen(t, "")
-	view1 := NewView("view1", s)
+	view1 := NewView("view1")
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -150,7 +149,7 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 		Height: 30,
 	})
 
-	view2 := NewView("view2", s)
+	view2 := NewView("view2")
 	view2.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -159,7 +158,7 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 	})
 	view2.SetParent(&view1)
 
-	view3 := NewView("view3", s)
+	view3 := NewView("view3")
 	view3.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -184,8 +183,7 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 
 // View3 is not visible.
 func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
-	s := mkTestScreen(t, "")
-	view1 := NewView("view1", s)
+	view1 := NewView("view1")
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -193,7 +191,7 @@ func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
 		Height: 30,
 	})
 
-	view2 := NewView("view2", s)
+	view2 := NewView("view2")
 	view2.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -202,7 +200,7 @@ func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
 	})
 	view2.SetParent(&view1)
 
-	view3 := NewView("view3", s)
+	view3 := NewView("view3")
 	view3.SetBounds(Rect{
 		X:      -30,
 		Y:      -30,
@@ -227,8 +225,7 @@ func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
 
 // View2 is not visible.
 func TestHelper_View2_is_not_visible_CalculateAbsolutePosition3(t *testing.T) {
-	s := mkTestScreen(t, "")
-	view1 := NewView("view1", s)
+	view1 := NewView("view1")
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -236,7 +233,7 @@ func TestHelper_View2_is_not_visible_CalculateAbsolutePosition3(t *testing.T) {
 		Height: 30,
 	})
 
-	view2 := NewView("view2", s)
+	view2 := NewView("view2")
 	view2.SetBounds(Rect{
 		X:      -100,
 		Y:      -100,
@@ -245,7 +242,7 @@ func TestHelper_View2_is_not_visible_CalculateAbsolutePosition3(t *testing.T) {
 	})
 	view2.SetParent(&view1)
 
-	view3 := NewView("view3", s)
+	view3 := NewView("view3")
 	view3.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -270,8 +267,7 @@ func TestHelper_View2_is_not_visible_CalculateAbsolutePosition3(t *testing.T) {
 
 // With only on component.
 func TestHelper_with_only_on_component_CalculateAbsolutePosition4(t *testing.T) {
-	s := mkTestScreen(t, "")
-	view1 := NewView("view1", s)
+	view1 := NewView("view1")
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -293,18 +289,8 @@ func TestHelper_with_only_on_component_CalculateAbsolutePosition4(t *testing.T) 
 	}
 }
 
-func mkTestScreen(t *testing.T, charset string) tcell.SimulationScreen {
-	s := tcell.NewSimulationScreen(charset)
-	if s == nil {
-		t.Fatalf("Failed to get simulation screen")
-	}
-	if e := s.Init(); e != nil {
-		t.Fatalf("Failed to initialize screen: %v", e)
-	}
-	return s
-}
-
-func checkCell(x int, y int, c rune, s tcell.SimulationScreen, st tcell.Style, t *testing.T) error {
+func checkCell(x int, y int, c rune, st tcell.Style, t *testing.T) error {
+	s := AppScreen().Screen().(tcell.SimulationScreen)
 	width, _ := s.Size()
 
 	b, _, _ := s.GetContents()
@@ -312,7 +298,7 @@ func checkCell(x int, y int, c rune, s tcell.SimulationScreen, st tcell.Style, t
 	cell := &b[y*width+x]
 
 	if len(cell.Runes) != 1 || len(cell.Bytes) != 1 {
-		return fmt.Errorf("Cell content lenght > 1 (x: %d, y: %d)", x, y)
+		return fmt.Errorf("Cell content lenght > 1 (x: %d, y: %d, content: %+v)", x, y, cell.Runes)
 	} else if cell.Runes[0] != c {
 		return fmt.Errorf("Incorrect cell content at (x: %d, y: %d). Want '%c': Found '%c'", x, y, c, cell.Runes[0])
 	} else if cell.Style != st {
@@ -328,14 +314,11 @@ func TestHelper_PrintStringOnScreen_function(t *testing.T) {
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorBlack)
 
-	s := mkTestScreen(t, "")
-	defer s.Fini()
-
+	s := AppScreen().Screen()
 	s.SetStyle(screenStyle)
 
-	if e := s.Init(); e != nil {
-		t.Error("Can't init screen")
-		return
+	if e := screen.Init(); e != nil {
+		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
 	s.Clear()
@@ -345,26 +328,25 @@ func TestHelper_PrintStringOnScreen_function(t *testing.T) {
 		Background(tcell.ColorBlue)
 
 	PrintStringOnScreen(
-		s,
 		tcell.ColorBlue,
 		tcell.ColorRed, 0, 0,
 		"Hello")
 
 	s.Show()
 
-	if e := checkCell(0, 0, 'H', s, st, t); e != nil {
+	if e := checkCell(0, 0, 'H', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(1, 0, 'e', s, st, t); e != nil {
+	if e := checkCell(1, 0, 'e', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(2, 0, 'l', s, st, t); e != nil {
+	if e := checkCell(2, 0, 'l', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(3, 0, 'l', s, st, t); e != nil {
+	if e := checkCell(3, 0, 'l', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(4, 0, 'o', s, st, t); e != nil {
+	if e := checkCell(4, 0, 'o', st, t); e != nil {
 		t.Error(e)
 	}
 }

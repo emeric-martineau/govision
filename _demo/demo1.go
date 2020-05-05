@@ -48,7 +48,6 @@ func timer1Gone(t *components.Timer) {
 	r.X++
 
 	base.PrintStringOnScreen(
-		view3.GetScreen(),
 		tcell.ColorBlack,
 		tcell.ColorWhite, 0, 0,
 		fmt.Sprintf("%+v", r))
@@ -76,9 +75,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := application.GetScreen()
-
-	view1 = base.NewView("view1", s)
+	view1 = base.NewView("view1")
 	view1.SetBounds(base.Rect{
 		X:      5,
 		Y:      8,
@@ -93,7 +90,7 @@ func main() {
 
 	rootComponent.AddChild(&view1)
 
-	view2 = base.NewView("view2", s)
+	view2 = base.NewView("view2")
 	view2.SetBounds(base.Rect{
 		X:      6,
 		Y:      2,
@@ -107,7 +104,7 @@ func main() {
 
 	rootComponent.AddChild(&view2)
 
-	view3 = base.NewView("view3", s)
+	view3 = base.NewView("view3")
 	view3.SetBounds(base.Rect{
 		X:      -5,
 		Y:      -5,
@@ -121,7 +118,7 @@ func main() {
 
 	view2.AddChild(&view3)
 
-	view4 := base.NewView("view4", s)
+	view4 := base.NewView("view4")
 	view4.SetBounds(base.Rect{
 		X:      1,
 		Y:      1,

@@ -21,26 +21,12 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-// ApplicationScreen is base struct for screen of application.
-type ApplicationScreen struct {
-	// Default screen style.
-	Style tcell.Style
-	// Default screen text color.
-	ForegroundColor tcell.Color
-	// Default screen background color.
-	BackgroundColor tcell.Color
-}
-
 // Application is base struct for create text UI.
 type Application struct {
 	// Main window.
 	mainWindow TComponent
 	// Quit application on Ctrl+C.
 	ExitOnCtrlC bool
-	// Screen application.
-	Screen ApplicationScreen
-	// Internal screen.
-	screen tcell.Screen
 }
 
 // MainWindow return main windows.
@@ -57,13 +43,13 @@ func (a Application) SetEncodingFallback(fb tcell.EncodingFallback) {
 
 // Init initialize screen (color, style...).
 func (a Application) Init() error {
-	style := a.Screen.Style.
-		Foreground(a.Screen.ForegroundColor).
-		Background(a.Screen.BackgroundColor)
+	style := appScreen.Style.
+		Foreground(appScreen.ForegroundColor).
+		Background(appScreen.BackgroundColor)
 
-	a.screen.SetStyle(style)
+	screen.SetStyle(style)
 
-	if e := a.screen.Init(); e != nil {
+	if e := screen.Init(); e != nil {
 		return e
 	}
 
@@ -72,9 +58,9 @@ func (a Application) Init() error {
 
 // Run application and wait event.
 func (a Application) Run() {
-	defer a.screen.Fini()
+	defer screen.Fini()
 
-	a.screen.Clear()
+	screen.Clear()
 
 	var currentMessage Message
 	doContinue := true
@@ -82,7 +68,7 @@ func (a Application) Run() {
 	// First time send draw message to create screen.
 	SendMessage(BuildDrawMessage(a.mainWindow.Handler()))
 
-	go poolEvent(a.screen)
+	go poolEvent(screen)
 
 	// Remember last message type cause many WmDraw can occure. If that, don't
 	// refresh screen. Only if previous message is not a draw.
@@ -105,17 +91,12 @@ func (a Application) Run() {
 			a.mainWindow.HandleMessage(currentMessage)
 
 			if currentMessage.Type == WmDraw && previousMessageType != WmDraw {
-				a.screen.Sync()
+				screen.Sync()
 			}
 		}
 
 		previousMessageType = currentMessage.Type
 	}
-}
-
-// GetScreen return screen to draw.
-func (a Application) GetScreen() tcell.Screen {
-	return a.screen
 }
 
 // Run in go function to wait keyboard or mouse event.
@@ -132,37 +113,28 @@ func poolEvent(s tcell.Screen) {
 			})
 		case *tcell.EventResize:
 			s.Sync()
-			SendMessage(BuildScreenResizeMessage(s))
+			SendMessage(BuildScreenResizeMessage())
 		}
 	}
 }
 
 // NewApplication create a text application.
 func NewApplication(mainWindow TComponent) (Application, error) {
-	var s tcell.Screen
 	var e error
 
 	if strings.HasSuffix(os.Args[0], ".test") {
-		s = tcell.NewSimulationScreen("")
+		screen = tcell.NewSimulationScreen("")
 		e = nil
 	} else {
-		s, e = tcell.NewScreen()
+		screen, e = tcell.NewScreen()
 	}
 
 	if e != nil {
 		return Application{}, e
 	}
 
-	screen := ApplicationScreen{
-		Style:           tcell.StyleDefault,
-		ForegroundColor: tcell.ColorWhite,
-		BackgroundColor: tcell.ColorBlack,
-	}
-
 	app := Application{
 		mainWindow:  mainWindow,
-		screen:      s,
-		Screen:      screen,
 		ExitOnCtrlC: true,
 	}
 

@@ -39,6 +39,4 @@ type TView interface {
 	SetForegroundColor(tcell.Color)
 	// Draw component
 	Draw()
-	// Screen to draw.
-	GetScreen() tcell.Screen
 }

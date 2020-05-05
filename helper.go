@@ -19,13 +19,13 @@ import (
 )
 
 // PrintStringOnScreen helper to print string. For Debug only.
-func PrintStringOnScreen(s tcell.Screen, bc tcell.Color, fc tcell.Color, x int, y int, msg string) {
+func PrintStringOnScreen(bc tcell.Color, fc tcell.Color, x int, y int, msg string) {
 	style := tcell.StyleDefault.
 		Foreground(fc).
 		Background(bc)
 
 	for pos, char := range msg {
-		s.
+		AppScreen().Screen().
 			SetContent(x+pos, y, char, nil, style)
 	}
 }

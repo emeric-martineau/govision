@@ -19,7 +19,7 @@ import (
 )
 
 // OnDraw is call when change enable.
-type OnDraw func(TView, tcell.Screen)
+type OnDraw func(TView)
 
 // View is the base object of all visual widget.
 type View struct {
@@ -29,7 +29,6 @@ type View struct {
 	visible         bool
 	backgroundColor tcell.Color
 	foregroundColor tcell.Color
-	screen          tcell.Screen
 	// To overide draw for custom draw for example.
 	OnDraw OnDraw
 }
@@ -116,16 +115,10 @@ func (v *View) Draw() {
 
 	for y := startY; y < endY; y++ {
 		for x := startX; x < endX; x++ {
-			v.
-				screen.
+			AppScreen().Screen().
 				SetContent(x, y, ' ', nil, style)
 		}
 	}
-}
-
-// GetScreen return associate screen.
-func (v *View) GetScreen() tcell.Screen {
-	return v.screen
 }
 
 // Manage message if it's for me.
@@ -134,11 +127,11 @@ func (v *View) manageMyMessage(msg Message) {
 	switch msg.Type {
 	case WmDraw:
 		if v.OnDraw != nil {
-			v.OnDraw(v, v.GetScreen())
+			v.OnDraw(v)
 		} else {
 			v.Draw()
 			// Redraw children.
-                        v.Component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
+			v.Component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
 		}
 	case WmChangeBounds:
 		v.bounds = msg.Value.(Rect)
@@ -162,9 +155,8 @@ func (v *View) HandleMessage(msg Message) bool {
 }
 
 // NewView create new timer.
-func NewView(name string, s tcell.Screen) View {
+func NewView(name string) View {
 	return View{
 		Component: NewComponent(name),
-		screen:    s,
 	}
 }

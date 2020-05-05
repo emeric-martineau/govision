@@ -23,13 +23,10 @@ import (
 // Ok, this test is only to don't have red line in IDE :)
 func TestMessage_Messages(t *testing.T) {
 	uuid := uuid.New()
-	s := mkTestScreen(t, "")
-	defer s.Fini()
-
 	BuildEmptyMessage()
 	BuildDrawMessage(uuid)
 	BuildKeyMessage(nil)
 	BuildChangeBounds(uuid, Rect{})
 	BuildZorderMessage(uuid)
-	BuildScreenResizeMessage(s)
+	BuildScreenResizeMessage()
 }
