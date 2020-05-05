@@ -42,14 +42,8 @@ func (t *Timer) GetIntervale() time.Duration {
 
 // SetIntervale set new interval and reset timer.
 func (t *Timer) SetIntervale(interval time.Duration) {
-	// Cancel time
-	t.canceled <- true
 	t.interval = interval
-
-	go run(t)
 }
-
-// TODO WmTimer send to parent if OnTimer is nil
 
 // SetEnabled active or disable timer.
 func (t *Timer) SetEnabled(status bool) {
@@ -73,7 +67,14 @@ loop:
 
 		select {
 		case <-timer.C:
-			if t.OnTimer != nil {
+			if t.OnTimer == nil {
+				if t.GetParent() != nil {
+					base.SendMessage(base.Message{
+						Handler: t.GetParent().Handler(),
+						Type:    base.WmTimer,
+					})
+				}
+			} else {
 				t.OnTimer(t)
 			}
 

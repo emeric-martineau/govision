@@ -52,6 +52,9 @@ const WmQuit uint = 0x06
 // WmChangeBounds send to component to change size, or move.
 const WmChangeBounds uint = 0x07
 
+// WmTimer send to Timer parent component if OnTimer is nil.
+const WmTimer uint = 0x08
+
 // WmUser allow user to have own message.
 const WmUser uint = ^uint(0) / 2
 

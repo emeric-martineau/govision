@@ -21,23 +21,60 @@ import (
 	base "github.com/emeric-martineau/govision"
 )
 
-func TestTime_OnTimer_function(t *testing.T) {
-	isCalled := false
+func TestTime_Codecoverage(t *testing.T) {
+	timer1 := NewTimer("timer1", 10*time.Millisecond)
+	timer1.GetIntervale()
+	timer1.SetEnabled(true)
+	timer1.SetEnabled(false)
+}
+
+func TestTime_OnTimer(t *testing.T) {
+	busChannel := make(chan bool)
 
 	timer1 := NewTimer("timer1", 10*time.Millisecond)
 	timer1.OnTimer = func(t *Timer) {
-		isCalled = true
-		base.SendMessage(base.Message{
-			Handler: base.BroadcastHandler(),
-			Type:    base.WmQuit,
-		})
+		busChannel <- true
 	}
 
-	app, _ := base.NewApplication(&timer1)
+	timeOut := time.NewTimer(50 * time.Millisecond)
+
+	timer1.SetEnabled(true)
+
+	select {
+	case <-timeOut.C:
+		t.Error("OnTimer not called!")
+	case <-busChannel:
+	}
+}
+
+func TestTime_WmEnable(t *testing.T) {
+	isCalled := false
+
+	c1 := base.NewComponent("c1")
+	c1.OnReceiveMessage = func(c base.TComponent, m base.Message) bool {
+		switch m.Type {
+		case base.WmTimer:
+			isCalled = true
+			base.SendMessage(base.Message{
+				Handler: base.BroadcastHandler(),
+				Type:    base.WmQuit,
+			})
+		}
+
+		return false
+	}
+
+	timer1 := NewTimer("timer1", 0)
+	timer1.SetParent(&c1)
+
+	// AddChild is not necessary
+
+	app, _ := base.NewApplication(&c1)
 
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
+		timer1.SetIntervale(10 * time.Millisecond)
 		timer1.SetEnabled(true)
 
 		app.Run()
@@ -45,5 +82,51 @@ func TestTime_OnTimer_function(t *testing.T) {
 		if !isCalled {
 			t.Error("OnTimer not called!")
 		}
+	}
+}
+
+func TestTime_SetInterval_if_enable(t *testing.T) {
+	busChannel := make(chan bool)
+
+	timer1 := NewTimer("timer1", 5*time.Millisecond)
+
+	OnTimer2 := func(t *Timer) {
+		busChannel <- true
+	}
+
+	OnTimer1 := func(t *Timer) {
+		timer1.OnTimer = OnTimer2
+		t.SetIntervale(7 * time.Millisecond)
+	}
+
+	timer1.OnTimer = OnTimer1
+
+	timeOut := time.NewTimer(50 * time.Millisecond)
+
+	timer1.SetEnabled(true)
+
+	select {
+	case <-timeOut.C:
+		t.Error("OnTimer not called!")
+	case <-busChannel:
+	}
+}
+
+func TestTime_OnTimer_disable_timer(t *testing.T) {
+	busChannel := make(chan bool)
+
+	timer1 := NewTimer("timer1", 10*time.Millisecond)
+	timer1.OnTimer = func(t *Timer) {
+		t.SetEnabled(false)
+	}
+
+	timeOut := time.NewTimer(50 * time.Millisecond)
+
+	timer1.SetEnabled(true)
+
+	select {
+	case <-timeOut.C:
+	case <-busChannel:
+		t.Error("OnTimer not called!")
 	}
 }
