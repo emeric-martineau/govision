@@ -15,10 +15,6 @@ package base
 // limitations under the License.
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	"container/list"
 
 	"github.com/gdamore/tcell"
@@ -32,6 +28,8 @@ type Application struct {
 	ExitOnCtrlC bool
 	// Windows list. The First item is Windows that have focus.
 	windowsList *list.List
+	// Application config
+	config ApplicationConfig
 }
 
 // MainWindow return main windows.
@@ -48,13 +46,13 @@ func (a Application) SetEncodingFallback(fb tcell.EncodingFallback) {
 
 // Init initialize screen (color, style...).
 func (a Application) Init() error {
-	style := appScreen.Style.
-		Foreground(appScreen.ForegroundColor).
-		Background(appScreen.BackgroundColor)
+	style := a.config.ScreenStyle.Style.
+		Foreground(a.config.ScreenStyle.ForegroundColor).
+		Background(a.config.ScreenStyle.BackgroundColor)
 
-	screen.SetStyle(style)
+	a.config.Screen.SetStyle(style)
 
-	if e := screen.Init(); e != nil {
+	if e := a.config.Screen.Init(); e != nil {
 		return e
 	}
 
@@ -63,9 +61,9 @@ func (a Application) Init() error {
 
 // Run application and wait event.
 func (a Application) Run() {
-	defer screen.Fini()
+	defer a.config.Screen.Fini()
 
-	screen.Clear()
+	a.config.Screen.Clear()
 
 	applicationHandler := ApplicationHandler()
 
@@ -75,7 +73,7 @@ func (a Application) Run() {
 	// First time send draw message to create screen.
 	SendMessage(BuildDrawMessage(a.mainWindow.Handler()))
 
-	go poolEvent(screen)
+	go poolEvent(a.config.Screen)
 
 	// Remember last message type cause many WmDraw can occure. If that, don't
 	// refresh screen. Only if previous message is not a draw.
@@ -96,7 +94,7 @@ func (a Application) Run() {
 			doContinue = a.callFocusedWindowHandleMessage(msg)
 
 			if msg.Type == WmDraw && previousMessageType != WmDraw {
-				screen.Sync()
+				a.config.Screen.Sync()
 			}
 		}
 
@@ -116,6 +114,11 @@ func (a Application) WindowsList() []TComponent {
 	return wl
 }
 
+// Config return application confguration.
+func (a Application) Config() ApplicationConfig {
+	return a.config
+}
+
 func (a Application) manageMyMessage(msg Message) bool {
 	switch msg.Type {
 	case WmQuit:
@@ -126,7 +129,6 @@ func (a Application) manageMyMessage(msg Message) bool {
 	case WmDestroy:
 		// Remove window to list and check is MainWindow
 		for e := a.windowsList.Front(); e != nil; e = e.Next() {
-			fmt.Printf("%+v\n", e.Value)
 			if msg.Value == e.Value {
 				a.windowsList.Remove(e)
 
@@ -156,9 +158,9 @@ func (a Application) callFocusedWindowHandleMessage(msg Message) bool {
 }
 
 // Run in go function to wait keyboard or mouse event.
-func poolEvent(s tcell.Screen) {
+func poolEvent(screen tcell.Screen) {
 	for {
-		ev := s.PollEvent()
+		ev := screen.PollEvent()
 
 		switch ev := ev.(type) { // TODO Mouse message
 		case *tcell.EventKey:
@@ -168,32 +170,18 @@ func poolEvent(s tcell.Screen) {
 				Value:   ev,
 			})
 		case *tcell.EventResize:
-			s.Sync()
-			SendMessage(BuildScreenResizeMessage())
+			screen.Sync()
+			SendMessage(BuildScreenResizeMessage(screen))
 		}
 	}
 }
 
 // NewApplication create a text application.
-func NewApplication(mainWindow TComponent) (Application, error) {
-	var e error
-
-	if strings.HasSuffix(os.Args[0], ".test") {
-		screen = tcell.NewSimulationScreen("")
-		e = nil
-	} else {
-		screen, e = tcell.NewScreen()
-	}
-
-	if e != nil {
-		return Application{}, e
-	}
-
-	app := Application{
+func NewApplication(mainWindow TComponent, config ApplicationConfig) Application {
+	return Application{
 		mainWindow:  mainWindow,
 		ExitOnCtrlC: true,
 		windowsList: list.New(),
+		config:      config,
 	}
-
-	return app, nil
 }

@@ -18,7 +18,9 @@ import "testing"
 
 // Test if function works :)
 func TestComponent_Dummy_for_code_coverage(t *testing.T) {
-	c := NewComponent("You know my name")
+	appConfig := CreateTestApplicationConfig()
+
+	c := NewComponent("You know my name", appConfig)
 	c.Name()
 	c.Handler()
 	c.GetEnabled()
@@ -28,7 +30,9 @@ func TestComponent_Dummy_for_code_coverage(t *testing.T) {
 
 // Test if function works :)
 func TestComponent_Enable_without_OnEnabled(t *testing.T) {
-	c := NewComponent("You know my name")
+	appConfig := CreateTestApplicationConfig()
+
+	c := NewComponent("You know my name", appConfig)
 	c.SetEnabled(true) // By default it's false
 
 	if c.GetEnabled() != true {
@@ -37,7 +41,9 @@ func TestComponent_Enable_without_OnEnabled(t *testing.T) {
 }
 
 func TestComponent_Enable_with_OnEnabled(t *testing.T) {
-	c := NewComponent("You know my name")
+	appConfig := CreateTestApplicationConfig()
+
+	c := NewComponent("You know my name", appConfig)
 	c.OnEnabled = func(c TComponent, status bool) bool {
 		return false
 	}
@@ -50,8 +56,10 @@ func TestComponent_Enable_with_OnEnabled(t *testing.T) {
 }
 
 func TestComponent_AddChild(t *testing.T) {
-	c1 := NewComponent("c1")
-	c2 := NewComponent("c2")
+	appConfig := CreateTestApplicationConfig()
+
+	c1 := NewComponent("c1", appConfig)
+	c2 := NewComponent("c2", appConfig)
 
 	c2.AddChild(&c1)
 
@@ -67,10 +75,12 @@ func TestComponent_AddChild(t *testing.T) {
 }
 
 func TestComponent_RemoveChild(t *testing.T) {
-	c1 := NewComponent("c1")
-	c2 := NewComponent("c2")
-	c3 := NewComponent("c3")
-	c4 := NewComponent("c4")
+	appConfig := CreateTestApplicationConfig()
+
+	c1 := NewComponent("c1", appConfig)
+	c2 := NewComponent("c2", appConfig)
+	c3 := NewComponent("c3", appConfig)
+	c4 := NewComponent("c4", appConfig)
 
 	c2.AddChild(&c1)
 	c2.AddChild(&c3)
@@ -94,10 +104,12 @@ func TestComponent_RemoveChild(t *testing.T) {
 }
 
 func TestComponent_RemoveChild_not_found_component(t *testing.T) {
-	c1 := NewComponent("c1")
-	c2 := NewComponent("c2")
-	c3 := NewComponent("c3")
-	c4 := NewComponent("c4")
+	appConfig := CreateTestApplicationConfig()
+
+	c1 := NewComponent("c1", appConfig)
+	c2 := NewComponent("c2", appConfig)
+	c3 := NewComponent("c3", appConfig)
+	c4 := NewComponent("c4", appConfig)
 
 	c2.AddChild(&c1)
 	//c2.AddChild(&c3)
@@ -122,10 +134,11 @@ func TestComponent_RemoveChild_not_found_component(t *testing.T) {
 
 func TestComponent_Message_draw_send_to_a_child(t *testing.T) {
 	isCalled := false
+	appConfig := CreateTestApplicationConfig()
 
 	// Use OnReceiveMessage on child
-	c1 := NewComponent("c1")
-	c2 := NewComponent("c2")
+	c1 := NewComponent("c1", appConfig)
+	c2 := NewComponent("c2", appConfig)
 
 	c1.AddChild(&c2)
 
@@ -157,9 +170,10 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 	// Use OnReceiveMessage on main component and child
 	isCalledMain := false
 	isCalledChild := false
+	appConfig := CreateTestApplicationConfig()
 
-	c1 := NewComponent("c1")
-	c2 := NewComponent("c2")
+	c1 := NewComponent("c1", appConfig)
+	c2 := NewComponent("c2", appConfig)
 
 	c1.AddChild(&c2)
 
@@ -207,7 +221,8 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 
 func TestComponent_Message_enable(t *testing.T) {
 	// Use OnReceiveMessage on main component
-	c1 := NewComponent("c1")
+	appConfig := CreateTestApplicationConfig()
+	c1 := NewComponent("c1", appConfig)
 	c1.SetEnabled(true) // By default it's false
 
 	c1.OnEnabled = func(c TComponent, status bool) bool {
@@ -230,13 +245,14 @@ func TestComponent_Message_enable(t *testing.T) {
 }
 
 func TestComponent_Message_zorder(t *testing.T) {
-	c := NewComponent("main")
+	appConfig := CreateTestApplicationConfig()
+	c := NewComponent("main", appConfig)
 
-	c1 := NewComponent("1")
+	c1 := NewComponent("1", appConfig)
 	c1.SetZorder(2)
-	c2 := NewComponent("2")
+	c2 := NewComponent("2", appConfig)
 	c2.SetZorder(1)
-	c3 := NewComponent("3")
+	c3 := NewComponent("3", appConfig)
 	c3.SetZorder(3)
 
 	c.AddChild(&c1)

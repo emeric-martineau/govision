@@ -74,8 +74,8 @@ func BuildKeyMessage(event *tcell.EventKey) Message {
 }
 
 // BuildScreenResizeMessage build a resize message broadcast.
-func BuildScreenResizeMessage() Message {
-	width, height := AppScreen().Screen().Size()
+func BuildScreenResizeMessage(screen tcell.Screen) Message {
+	width, height := screen.Size()
 
 	r := Rect{
 		X:      0,

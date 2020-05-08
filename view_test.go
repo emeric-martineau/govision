@@ -21,7 +21,8 @@ import (
 )
 
 func TestView_Dummy_for_code_coverage(t *testing.T) {
-	c := NewView("You know my name")
+	appConfig := CreateTestApplicationConfig()
+	c := NewView("You know my name", appConfig)
 	c.SetFocused(true)
 	c.GetFocused()
 	c.SetVisible(true)
@@ -33,26 +34,20 @@ func TestView_Dummy_for_code_coverage(t *testing.T) {
 }
 
 func TestView_draw_one_view(t *testing.T) {
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	defer s.Fini()
-
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
 	st := tcell.StyleDefault.
 		Foreground(tcell.ColorYellow).
 		Background(tcell.ColorBlue)
 
-	c := NewView("You know my name")
+	c := NewView("You know my name", appConfig)
 	c.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -68,11 +63,11 @@ func TestView_draw_one_view(t *testing.T) {
 		Type:    WmDraw,
 	})
 
-	s.Show()
+	appConfig.Screen.Show()
 
 	for x := 1; x < 4; x++ {
 		for y := 1; y < 4; y++ {
-			if e := checkCell(x, y, ' ', st, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', st, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -81,22 +76,16 @@ func TestView_draw_one_view(t *testing.T) {
 
 func TestView_draw_one_view_with_OnDraw(t *testing.T) {
 	isCalled := false
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	defer s.Fini()
-
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
-	c := NewView("You know my name")
+	c := NewView("You know my name", appConfig)
 	c.OnDraw = func(v TView) {
 		isCalled = true
 	}
@@ -116,12 +105,12 @@ func TestView_draw_one_view_with_OnDraw(t *testing.T) {
 		Type:    WmDraw,
 	})
 
-	s.Show()
+	appConfig.Screen.Show()
 
 	// Component not draw, cause OnDraw do nothing in our case
 	for x := 1; x < 4; x++ {
 		for y := 1; y < 4; y++ {
-			if e := checkCell(x, y, ' ', 0, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', 0, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -167,27 +156,16 @@ func TestView_draw_one_view_with_OnDraw(t *testing.T) {
 //  +--------------------------------------------------+
 //  x:1 / y: 21                                        x:11 / y: 21
 func TestView_draw_one_view_in_another_view(t *testing.T) {
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	defer s.Fini()
-
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
-	if e := s.Init(); e != nil {
-		t.Error("Can't init screen")
-		return
-	}
-
-	s.Clear()
+	appConfig.Screen.Clear()
 
 	c1Style := tcell.StyleDefault.
 		Foreground(tcell.ColorYellow).
@@ -197,7 +175,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 		Foreground(tcell.ColorBlue).
 		Background(tcell.ColorGreen)
 
-	c1 := NewView("MainComponent")
+	c1 := NewView("MainComponent", appConfig)
 	c1.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -208,7 +186,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 	c1.SetBackgroundColor(tcell.ColorBlue)
 	c1.SetVisible(true)
 
-	c2 := NewView("ChildComponent")
+	c2 := NewView("ChildComponent", appConfig)
 	c2.SetBounds(Rect{
 		X:      2,
 		Y:      2,
@@ -227,13 +205,13 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 		Type:    WmDraw,
 	})
 
-	s.Show()
+	appConfig.Screen.Show()
 
 	// Check component 1 ---------------------------------------------------------
 	// Top
 	for x := 1; x < 11; x++ {
 		for y := 1; y < 3; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -242,7 +220,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 	// Bottom
 	for x := 1; x < 11; x++ {
 		for y := 9; y < 21; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -251,7 +229,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 	// Left
 	for x := 1; x < 2; x++ {
 		for y := 1; y < 21; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -260,7 +238,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 	// Right
 	for x := 9; x < 11; x++ {
 		for y := 1; y < 21; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -269,7 +247,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 	// Check component 2 ---------------------------------------------------------
 	for x := 3; x < 8; x++ {
 		for y := 3; y < 8; y++ {
-			if e := checkCell(x, y, ' ', c2Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c2Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -307,27 +285,21 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 //  +--------------------------------------------------+
 //  x:1 / y: 21                                        x:11 / y: 21
 func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	defer s.Fini()
-
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
-	if e := s.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Error("Can't init screen")
 		return
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
 	c1Style := tcell.StyleDefault.
 		Foreground(tcell.ColorYellow).
@@ -337,7 +309,7 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 		Foreground(tcell.ColorBlue).
 		Background(tcell.ColorGreen)
 
-	c1 := NewView("MainComponent")
+	c1 := NewView("MainComponent", appConfig)
 	c1.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -348,7 +320,7 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 	c1.SetBackgroundColor(tcell.ColorBlue)
 	c1.SetVisible(true)
 
-	c2 := NewView("ChildComponent")
+	c2 := NewView("ChildComponent", appConfig)
 	c2.SetBounds(Rect{
 		X:      -2,
 		Y:      -2,
@@ -367,13 +339,13 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 		Type:    WmDraw,
 	})
 
-	s.Show()
+	appConfig.Screen.Show()
 
 	// Check component 1 ---------------------------------------------------------
 	// Bottom
 	for x := 1; x < 11; x++ {
 		for y := 5; y < 21; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -382,7 +354,7 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 	// Right
 	for x := 5; x < 11; x++ {
 		for y := 1; y < 21; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -391,7 +363,7 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 	// Check component 2 ---------------------------------------------------------
 	for x := 1; x < 4; x++ {
 		for y := 1; y < 4; y++ {
-			if e := checkCell(x, y, ' ', c2Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c2Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -399,25 +371,20 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 }
 
 func TestView_draw_one_view_in_another_view_full_out(t *testing.T) {
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	defer s.Fini()
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
 	c1Style := tcell.StyleDefault.
 		Foreground(tcell.ColorYellow).
 		Background(tcell.ColorBlue)
 
-	c1 := NewView("MainComponent")
+	c1 := NewView("MainComponent", appConfig)
 	c1.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -428,7 +395,7 @@ func TestView_draw_one_view_in_another_view_full_out(t *testing.T) {
 	c1.SetBackgroundColor(tcell.ColorBlue)
 	c1.SetVisible(true)
 
-	c2 := NewView("ChildComponent")
+	c2 := NewView("ChildComponent", appConfig)
 	c2.SetBounds(Rect{
 		X:      -20,
 		Y:      -20,
@@ -447,13 +414,13 @@ func TestView_draw_one_view_in_another_view_full_out(t *testing.T) {
 		Type:    WmDraw,
 	})
 
-	s.Show()
+	appConfig.Screen.Show()
 
 	// Check component 1 ---------------------------------------------------------
 
 	for x := 1; x < 11; x++ {
 		for y := 1; y < 21; y++ {
-			if e := checkCell(x, y, ' ', c1Style, t); e != nil {
+			if e := checkCell(appConfig.Screen, x, y, ' ', c1Style, t); e != nil {
 				t.Error(e)
 			}
 		}
@@ -461,20 +428,16 @@ func TestView_draw_one_view_in_another_view_full_out(t *testing.T) {
 }
 
 func TestView_change_bound(t *testing.T) {
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
-	c := NewView("You know my name")
+	c := NewView("You know my name", appConfig)
 	c.SetBounds(Rect{
 		X:      1,
 		Y:      1,

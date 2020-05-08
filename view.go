@@ -99,8 +99,6 @@ func (v *View) Draw() {
 		return
 	}
 
-	PrintStringOnScreen(tcell.ColorBlack, tcell.ColorYellow, 0, 0, "component")
-
 	style := tcell.StyleDefault.
 		Foreground(v.foregroundColor).
 		Background(v.backgroundColor)
@@ -117,7 +115,7 @@ func (v *View) Draw() {
 
 	for y := startY; y < endY; y++ {
 		for x := startX; x < endX; x++ {
-			AppScreen().Screen().
+			v.AppConfig().Screen.
 				SetContent(x, y, ' ', nil, style)
 		}
 	}
@@ -157,8 +155,8 @@ func (v *View) HandleMessage(msg Message) bool {
 }
 
 // NewView create new timer.
-func NewView(name string) View {
+func NewView(name string, config ApplicationConfig) View {
 	return View{
-		Component: NewComponent(name),
+		Component: NewComponent(name, config),
 	}
 }

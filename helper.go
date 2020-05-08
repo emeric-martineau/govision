@@ -19,14 +19,13 @@ import (
 )
 
 // PrintStringOnScreen helper to print string. For Debug only.
-func PrintStringOnScreen(bc tcell.Color, fc tcell.Color, x int, y int, msg string) {
+func PrintStringOnScreen(screen tcell.Screen, bc tcell.Color, fc tcell.Color, x int, y int, msg string) {
 	style := tcell.StyleDefault.
 		Foreground(fc).
 		Background(bc)
 
 	for pos, char := range msg {
-		AppScreen().Screen().
-			SetContent(x+pos, y, char, nil, style)
+		screen.SetContent(x+pos, y, char, nil, style)
 	}
 }
 
@@ -191,7 +190,7 @@ func CalculateDrawZone(view TView) Rect {
 }
 
 // Fill screen zone with give draw zone.
-func Fill(absoluteBounds Rect, drawBounds Rect, style tcell.Style) {
+func Fill(screen tcell.Screen, absoluteBounds Rect, drawBounds Rect, style tcell.Style) {
 	// If component is more biggest than parent
 	startX := absoluteBounds.X
 	endX := absoluteBounds.X + absoluteBounds.Width
@@ -202,8 +201,7 @@ func Fill(absoluteBounds Rect, drawBounds Rect, style tcell.Style) {
 	for y := startY; y < endY; y++ {
 		for x := startX; x < endX; x++ {
 			if InHorizontal(x, drawBounds) && InVertical(y, drawBounds) {
-				AppScreen().Screen().
-					SetContent(x, y, ' ', nil, style)
+				screen.SetContent(x, y, ' ', nil, style)
 			}
 		}
 	}

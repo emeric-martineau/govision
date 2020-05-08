@@ -21,35 +21,46 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-func TestApplication_global(t *testing.T) {
+func CreateTestApplicationConfig() ApplicationConfig {
+	screen := tcell.NewSimulationScreen("")
 
-	//----------------------------------------------------------------------------
-	// TestApplication_Exit_on_CtrlC
-	t.Log("Running TestApplication_Exit_on_CtrlC")
+	// Screen application.
+	screenStyle := ApplicationStyle{
+		Style:           tcell.StyleDefault,
+		ForegroundColor: tcell.ColorWhite,
+		BackgroundColor: tcell.ColorBlack,
+	}
 
-	mainWindow := NewComponent("window1")
+	return ApplicationConfig{
+		ScreenStyle: screenStyle,
+		Screen:      screen,
+	}
+}
 
-	app, _ := NewApplication(&mainWindow)
+func TestApplication_Exit_on_CtrlC(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	mainWindow := NewComponent("window1", appConfig)
+
+	app := NewApplication(&mainWindow, appConfig)
 
 	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		s := AppScreen().Screen().(tcell.SimulationScreen)
-
-		s.InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		appConfig.Screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
 
 		app.Run()
 	}
+}
 
-	//----------------------------------------------------------------------------
-	// TestApplication_Exit_on_WmQuit
-	t.Log("Running TestApplication_Exit_on_WmQuit")
+func TestApplication_Exit_on_WmQuit(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
 
-	mainWindow = NewComponent("window2")
+	mainWindow := NewComponent("window2", appConfig)
 
-	app, _ = NewApplication(&mainWindow)
+	app := NewApplication(&mainWindow, appConfig)
 
 	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
 		if count := len(app.WindowsList()); count != 1 {
@@ -83,11 +94,12 @@ func TestApplication_global(t *testing.T) {
 
 		app.Run()
 	}
+}
 
-	//----------------------------------------------------------------------------
-	// TestApplication_Exit_destroy_mainwindow
-	t.Log("Running TestApplication_Exit_destroy_mainwindow")
-	mainWindow = NewComponent("window3")
+func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	mainWindow := NewComponent("window3", appConfig)
 
 	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
 		SendMessage(Message{
@@ -99,7 +111,7 @@ func TestApplication_global(t *testing.T) {
 		return false
 	}
 
-	app, _ = NewApplication(&mainWindow)
+	app := NewApplication(&mainWindow, appConfig)
 
 	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
@@ -127,5 +139,4 @@ func TestApplication_global(t *testing.T) {
 			t.Errorf("%+v\n", w)
 		}
 	}
-
 }

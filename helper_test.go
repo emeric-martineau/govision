@@ -141,7 +141,9 @@ func TestHelper_Intersect_Rectangle1_no_intersect_rectangle2(t *testing.T) {
 
 // All components are visible.
 func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.T) {
-	view1 := NewView("view1")
+	appConfig := CreateTestApplicationConfig()
+
+	view1 := NewView("view1", appConfig)
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -149,7 +151,7 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 		Height: 30,
 	})
 
-	view2 := NewView("view2")
+	view2 := NewView("view2", appConfig)
 	view2.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -158,7 +160,7 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 	})
 	view2.SetParent(&view1)
 
-	view3 := NewView("view3")
+	view3 := NewView("view3", appConfig)
 	view3.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -183,7 +185,9 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 
 // View3 is not visible.
 func TestHelper_View3_is_not_visible_CalculateDrawZone2(t *testing.T) {
-	view1 := NewView("view1")
+	appConfig := CreateTestApplicationConfig()
+
+	view1 := NewView("view1", appConfig)
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -191,7 +195,7 @@ func TestHelper_View3_is_not_visible_CalculateDrawZone2(t *testing.T) {
 		Height: 30,
 	})
 
-	view2 := NewView("view2")
+	view2 := NewView("view2", appConfig)
 	view2.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -200,7 +204,7 @@ func TestHelper_View3_is_not_visible_CalculateDrawZone2(t *testing.T) {
 	})
 	view2.SetParent(&view1)
 
-	view3 := NewView("view3")
+	view3 := NewView("view3", appConfig)
 	view3.SetBounds(Rect{
 		X:      -30,
 		Y:      -30,
@@ -225,7 +229,9 @@ func TestHelper_View3_is_not_visible_CalculateDrawZone2(t *testing.T) {
 
 // View2 is not visible.
 func TestHelper_View2_is_not_visible_CalculateDrawZone3(t *testing.T) {
-	view1 := NewView("view1")
+	appConfig := CreateTestApplicationConfig()
+
+	view1 := NewView("view1", appConfig)
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -233,7 +239,7 @@ func TestHelper_View2_is_not_visible_CalculateDrawZone3(t *testing.T) {
 		Height: 30,
 	})
 
-	view2 := NewView("view2")
+	view2 := NewView("view2", appConfig)
 	view2.SetBounds(Rect{
 		X:      -100,
 		Y:      -100,
@@ -242,7 +248,7 @@ func TestHelper_View2_is_not_visible_CalculateDrawZone3(t *testing.T) {
 	})
 	view2.SetParent(&view1)
 
-	view3 := NewView("view3")
+	view3 := NewView("view3", appConfig)
 	view3.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -267,7 +273,9 @@ func TestHelper_View2_is_not_visible_CalculateDrawZone3(t *testing.T) {
 
 // With only on component.
 func TestHelper_with_only_on_component_CalculateAbsolutePosition4(t *testing.T) {
-	view1 := NewView("view1")
+	appConfig := CreateTestApplicationConfig()
+
+	view1 := NewView("view1", appConfig)
 	view1.SetBounds(Rect{
 		X:      2,
 		Y:      3,
@@ -289,20 +297,16 @@ func TestHelper_with_only_on_component_CalculateAbsolutePosition4(t *testing.T) 
 	}
 }
 
-func checkCell(x int, y int, c rune, st tcell.Style, t *testing.T) error {
-	s := AppScreen().Screen().(tcell.SimulationScreen)
-	width, _ := s.Size()
+func checkCell(screen tcell.Screen, x int, y int, c rune, st tcell.Style, t *testing.T) error {
 
-	b, _, _ := s.GetContents()
+	mainc, _, style, _ := screen.GetContent(x, y)
 
-	cell := &b[y*width+x]
+	//fmt.Printf("%+v\n", screen)
 
-	if len(cell.Runes) != 1 || len(cell.Bytes) != 1 {
-		return fmt.Errorf("Cell content lenght > 1 (x: %d, y: %d, content: %+v)", x, y, cell.Runes)
-	} else if cell.Runes[0] != c {
-		return fmt.Errorf("Incorrect cell content at (x: %d, y: %d). Want '%c': Found '%c'", x, y, c, cell.Runes[0])
-	} else if cell.Style != st {
-		return fmt.Errorf("Incorrect style at (x: %d, y: %d). Want '%v': %v", x, y, st, cell.Style)
+	if mainc != c {
+		return fmt.Errorf("Incorrect cell content at (x: %d, y: %d). Want '%c': Found '%c'", x, y, c, mainc)
+	} else if style != st {
+		return fmt.Errorf("Incorrect style at (x: %d, y: %d). Want '%v': %v", x, y, st, style)
 	}
 
 	return nil
@@ -310,43 +314,40 @@ func checkCell(x int, y int, c rune, st tcell.Style, t *testing.T) error {
 
 // Test if function works :)
 func TestHelper_PrintStringOnScreen_function(t *testing.T) {
-	screenStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
+	appConfig := CreateTestApplicationConfig()
+	defer appConfig.Screen.Fini()
 
-	s := AppScreen().Screen()
-	s.SetStyle(screenStyle)
-
-	if e := screen.Init(); e != nil {
+	if e := appConfig.Screen.Init(); e != nil {
 		t.Errorf("Can't init screen: %+v\n", e)
 	}
 
-	s.Clear()
+	appConfig.Screen.Clear()
 
 	st := tcell.StyleDefault.
 		Foreground(tcell.ColorRed).
 		Background(tcell.ColorBlue)
 
 	PrintStringOnScreen(
+		appConfig.Screen,
 		tcell.ColorBlue,
 		tcell.ColorRed, 0, 0,
 		"Hello")
 
-	s.Show()
+	appConfig.Screen.Show()
 
-	if e := checkCell(0, 0, 'H', st, t); e != nil {
+	if e := checkCell(appConfig.Screen, 0, 0, 'H', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(1, 0, 'e', st, t); e != nil {
+	if e := checkCell(appConfig.Screen, 1, 0, 'e', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(2, 0, 'l', st, t); e != nil {
+	if e := checkCell(appConfig.Screen, 2, 0, 'l', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(3, 0, 'l', st, t); e != nil {
+	if e := checkCell(appConfig.Screen, 3, 0, 'l', st, t); e != nil {
 		t.Error(e)
 	}
-	if e := checkCell(4, 0, 'o', st, t); e != nil {
+	if e := checkCell(appConfig.Screen, 4, 0, 'o', st, t); e != nil {
 		t.Error(e)
 	}
 }

@@ -46,6 +46,8 @@ type Component struct {
 	OnEnabled OnEnabled
 	// Order to display.
 	zorder int
+	// Application configuration.
+	appConfig ApplicationConfig
 }
 
 // Manage message if it's for me.
@@ -72,7 +74,7 @@ func (c *Component) HandleMessage(msg Message) bool {
 	switch msg.Handler {
 	case c.handler:
 		// For me
-                c.manageMyMessage(msg)
+		c.manageMyMessage(msg)
 		isStop = true
 	case BroadcastHandler():
 		// For me and my children
@@ -93,6 +95,11 @@ func (c *Component) HandleMessage(msg Message) bool {
 	}
 
 	return isStop
+}
+
+// AppConfig return application confguration.
+func (c *Component) AppConfig() ApplicationConfig {
+	return c.appConfig
 }
 
 func (c *Component) reorderChildren() {
@@ -190,9 +197,10 @@ func (c *Component) GetZorder() int {
 }
 
 // NewComponent create new component.
-func NewComponent(name string) Component {
+func NewComponent(name string, config ApplicationConfig) Component {
 	return Component{
-		name:    name,
-		handler: uuid.New(),
+		name:      name,
+		handler:   uuid.New(),
+		appConfig: config,
 	}
 }
