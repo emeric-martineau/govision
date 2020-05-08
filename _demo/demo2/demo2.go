@@ -25,17 +25,13 @@ import (
 )
 
 func main() {
-	mainWindow := components.NewWindow("window1")
+	appConfig := base.CreateDefaultApplicationConfig()
+	mainWindow := components.NewWindow("window1", appConfig)
 	mainWindow.SetEnabled(true)
 
-	application, e := base.NewApplication(&mainWindow)
+	application := base.NewApplication(&mainWindow, appConfig)
 
-	if e != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", e)
-		os.Exit(1)
-	}
-
-	if e = application.Init(); e != nil {
+	if e := application.Init(); e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
 		os.Exit(1)
 	}
@@ -50,8 +46,6 @@ func main() {
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 	mainWindow.BorderStyle = components.BorderStyleSingle
-
-	base.SendMessage(components.BuildCreateWindowMessage(&mainWindow))
 
 	application.Run()
 }

@@ -43,78 +43,100 @@ type Window struct {
 	base.View
 }
 
-// ┌─[■]    ─┐
-func DrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
-	titleBar := make([]rune, base.MaxInt(titleBounds.Width, drawBounds.Width))
-	titleBarLen := len(titleBar)
+// DefaultDrawTitleBar default draw for title bar.
+// Give ┌─[■]─ My title ─┐
+func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
 	indexTitleBar := 0
 
-	titleBar[indexTitleBar] = tcell.RuneULCorner // [0]
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneULCorner, nil, style) // [1]
 	indexTitleBar++
 
 	const minimumTitleBar = 7
-
+	// TODO change char with border style
 	// Draw close only if available space for
 	// ┌─[■]─┐
-	if titleBarLen >= minimumTitleBar {
-		titleBar[indexTitleBar] = '─' // [1]
+	if titleBounds.Width >= minimumTitleBar {
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style) // [1]
 		indexTitleBar++
-		titleBar[indexTitleBar] = '[' // [2]
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, '[', nil, style) // [2]
 		indexTitleBar++
-		titleBar[indexTitleBar] = '■' // [3]
+		// TODO set color for close button
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, '■', nil, style) // [3]
 		indexTitleBar++
-		titleBar[indexTitleBar] = ']' // [4]
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ']', nil, style) // [4]
 		indexTitleBar++
 
 		// Need space before and after caption -> +2
 		// ─── Title ────
-		if titleBarLen > len(caption)+minimumTitleBar+2 {
-			paddingLen := (titleBarLen - len(caption) - minimumTitleBar - 2)
+		if titleBounds.Width > len(caption)+minimumTitleBar+2 {
+			paddingLen := (titleBounds.Width - len(caption) - minimumTitleBar - 2)
 			paddingLenLeft := paddingLen / 2
 
 			// Border before caption
 			// ──────── Hello
 			for i := 0; i < paddingLenLeft; i++ {
-				titleBar[indexTitleBar] = '─'
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
 				indexTitleBar++
 			}
 
-			titleBar[indexTitleBar] = ' '
+			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ' ', nil, style)
 			indexTitleBar++
 
 			c := []rune(caption)
 
 			// Draw caption
 			for i := 0; i < len(c); i++ {
-				titleBar[indexTitleBar] = c[i]
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, c[i], nil, style)
 				indexTitleBar++
 			}
 
-			titleBar[indexTitleBar] = ' '
+			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ' ', nil, style)
 			indexTitleBar++
 
 			// Border after caption
 			// Hello ────
-			for ; indexTitleBar < titleBarLen-1; indexTitleBar++ {
-				titleBar[indexTitleBar] = '─'
+			// -1 cause last char is corner
+			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
 			}
 		} else {
-
+			// TODO can't draw caption fully
 		}
+	} else {
+		// TODO no space to draw close button
 	}
-	//tcell.RuneULCorner
-	//tcell.RuneHLine
-	//[
-	// X -> color ?
-	//]
-	// tcell.RuneHLine
-	// tcell.RuneURCorner
 
 	// TODO add up/down button
 
-	titleBar[indexTitleBar] = tcell.RuneURCorner
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneURCorner, nil, style)
+}
 
-	screen.SetContent(titleBounds.X, titleBounds.Y, titleBar[0], titleBar[1:], style)
+// DefaultDrawBottomBar draw bottom border of window.
+// Give └───────────┘
+func DefaultDrawBottomBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
+	indexTitleBar := 0
+
+	// TODO if not fully visible
+
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneLLCorner, nil, style) // [0]
+	indexTitleBar++
+
+	// TODO change char with border style
+	// -1 cause last char is corner
+	for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+	}
+
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneLRCorner, nil, style)
+}
+
+// DefaultDrawLeftOrRightBorder draw left or right border of window.
+func DefaultDrawLeftOrRightBorder(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
+	titleBarLen := titleBounds.Height
+
+	for indexTitleBar := 0; indexTitleBar < titleBarLen; indexTitleBar++ {
+		screen.SetContent(titleBounds.X, titleBounds.Y+indexTitleBar, tcell.RuneVLine, nil, style)
+	}
 }
 
 // GetClientBounds return client bounds.
@@ -142,7 +164,20 @@ func (w Window) Draw() {
 	// Draw background of window
 	base.Fill(w.AppConfig().Screen, clientBounds, drawBounds, style)
 
-	// Draw title
+	borderStyle := tcell.StyleDefault.
+		Foreground(w.GetForegroundColor()).
+		Background(tcell.ColorBlue)
+
+	drawTitle(absoluteBounds, drawBounds, &w, borderStyle)
+
+	drawBottom(absoluteBounds, drawBounds, &w, borderStyle)
+
+	drawBorderLeft(absoluteBounds, drawBounds, &w, borderStyle)
+
+	drawBorderRight(absoluteBounds, drawBounds, &w, borderStyle)
+}
+
+func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
 	titleBounds := base.Rect{
 		X:      absoluteBounds.X,
 		Y:      absoluteBounds.Y,
@@ -150,31 +185,44 @@ func (w Window) Draw() {
 		Height: 1,
 	}
 
-	titleStyle := tcell.StyleDefault.
-		Foreground(w.GetForegroundColor()).
-		Background(tcell.ColorBlue)
+	DefaultDrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, w.Caption,
+		borderStyle, w.BorderStyle)
+}
 
-	DrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, "Hello", titleStyle, w.BorderStyle)
-	/*
-		titleStyle := tcell.StyleDefault.
-			Foreground(w.GetForegroundColor()).
-			Background(tcell.ColorBlue)
+func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	bottomBorderBounds := base.Rect{
+		X:      absoluteBounds.X,
+		Y:      absoluteBounds.Y + absoluteBounds.Height - 1,
+		Width:  absoluteBounds.Width,
+		Height: 1,
+	}
 
-		titleBounds := base.Rect{
-			X:      absoluteBounds.X,
-			Y:      absoluteBounds.Y,
-			Width:  absoluteBounds.Width,
-			Height: 1,
-		}
+	DefaultDrawBottomBar(w.AppConfig().Screen, bottomBorderBounds, drawBounds, w.Caption,
+		borderStyle, w.BorderStyle)
+}
 
-		base.Fill(titleBounds, drawBounds, titleStyle)
-		// TODO Draw bottom
-		b := []rune{'Q', 'E'}
-		base.AppScreen().Screen().
-			SetContent(30, 30, ' ', b, style)
-	*/
-	// TODO Draw left
-	// TODO Draw right
+func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	leftBorderBounds := base.Rect{
+		X:      absoluteBounds.X,
+		Y:      absoluteBounds.Y + 1,
+		Width:  1,
+		Height: absoluteBounds.Height - 2,
+	}
+
+	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
+		borderStyle, w.BorderStyle)
+}
+
+func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	leftBorderBounds := base.Rect{
+		X:      absoluteBounds.X + absoluteBounds.Width - 1,
+		Y:      absoluteBounds.Y + 1,
+		Width:  1,
+		Height: absoluteBounds.Height - 2,
+	}
+
+	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
+		borderStyle, w.BorderStyle)
 }
 
 // Manage message if it's for me.
@@ -199,6 +247,7 @@ func (w Window) manageMyMessage(msg base.Message) {
 
 // HandleMessage is use to manage message.
 func (w Window) HandleMessage(msg base.Message) bool {
+
 	switch msg.Handler {
 	case w.Handler():
 		w.manageMyMessage(msg)
@@ -231,10 +280,9 @@ func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect 
 // NewWindow create new window.
 func NewWindow(name string, config base.ApplicationConfig) Window {
 	w := Window{
-		View: base.NewView(name, config),
+		View:    base.NewView(name, config),
+		Caption: name,
 	}
-
-	config.Message.Send(BuildCreateWindowMessage(&w))
 
 	return w
 }
