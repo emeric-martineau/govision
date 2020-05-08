@@ -48,11 +48,13 @@ func MinInt(a int, b int) int {
 	return a
 }
 
-func inHorizontal(x int, r Rect) bool {
+// InHorizontal return true if x in rect.
+func InHorizontal(x int, r Rect) bool {
 	return (x >= r.X) && (x < r.X+r.Width)
 }
 
-func inVertical(y int, r Rect) bool {
+// InVertical return true if y in rect.
+func InVertical(y int, r Rect) bool {
 	return (y >= r.Y) && (y < r.Y+r.Height)
 }
 
@@ -65,7 +67,7 @@ func Intersect(r1 Rect, r2 Rect) Rect {
 	var height int
 	var topY int
 
-	if inHorizontal(r2.X, r1) || inHorizontal(r1.X, r2) {
+	if InHorizontal(r2.X, r1) || InHorizontal(r1.X, r2) {
 		leftX = MaxInt(r1.X, r2.X)
 		rightX := MinInt(r1.X+r1.Width, r2.X+r2.Width)
 		width = MaxInt(0, rightX-leftX)
@@ -74,7 +76,7 @@ func Intersect(r1 Rect, r2 Rect) Rect {
 		width = 0
 	}
 
-	if inVertical(r2.Y, r1) || inVertical(r1.Y, r2) {
+	if InVertical(r2.Y, r1) || InVertical(r1.Y, r2) {
 		topY = MaxInt(r1.Y, r2.Y)
 		bottomY := MinInt(r1.Y+r1.Height, r2.Y+r2.Height)
 		height = MaxInt(0, bottomY-topY)
@@ -95,6 +97,45 @@ func Intersect(r1 Rect, r2 Rect) Rect {
 // relative position of parent, to absolute position of screen.
 // If component is not visible, return Rect{X:0, Y:0, Width:0, Height: 0}.
 func CalculateAbsolutePosition(view TView) Rect {
+	viewRect := view.GetBounds()
+
+	p := view.GetParent()
+
+	var v TView
+
+	switch p := p.(type) {
+	case TView:
+		v = p
+
+	default:
+		v = nil
+	}
+
+	for v != nil {
+		bounds := v.GetBounds()
+		clientBounds := v.GetClientBounds()
+
+		// viewRect must be have same referencial as parent
+		viewRect.X += bounds.X + clientBounds.X
+		viewRect.Y += bounds.Y + clientBounds.Y
+
+		p := v.GetParent()
+
+		switch p := p.(type) {
+		case TView:
+			v = p
+		default:
+			v = nil
+		}
+	}
+
+	return viewRect
+}
+
+// CalculateDrawZone helper to calculate position of component from
+// relative position of parent, to absolute position of screen.
+// If component is not visible, return Rect{X:0, Y:0, Width:0, Height: 0}.
+func CalculateDrawZone(view TView) Rect {
 	viewRect := view.GetBounds()
 
 	p := view.GetParent()
@@ -147,4 +188,23 @@ func CalculateAbsolutePosition(view TView) Rect {
 	}
 
 	return viewRect
+}
+
+// Fill screen zone with give draw zone.
+func Fill(absoluteBounds Rect, drawBounds Rect, style tcell.Style) {
+	// If component is more biggest than parent
+	startX := absoluteBounds.X
+	endX := absoluteBounds.X + absoluteBounds.Width
+
+	startY := absoluteBounds.Y
+	endY := absoluteBounds.Y + absoluteBounds.Height
+
+	for y := startY; y < endY; y++ {
+		for x := startX; x < endX; x++ {
+			if InHorizontal(x, drawBounds) && InVertical(y, drawBounds) {
+				AppScreen().Screen().
+					SetContent(x, y, ' ', nil, style)
+			}
+		}
+	}
 }

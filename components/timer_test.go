@@ -56,7 +56,7 @@ func TestTime_WmEnable(t *testing.T) {
 		case base.WmTimer:
 			isCalled = true
 			base.SendMessage(base.Message{
-				Handler: base.BroadcastHandler(),
+				Handler: base.ApplicationHandler(),
 				Type:    base.WmQuit,
 			})
 		}
@@ -68,6 +68,11 @@ func TestTime_WmEnable(t *testing.T) {
 	timer1.SetParent(&c1)
 
 	// AddChild is not necessary
+	base.SendMessage(base.Message{
+		Handler: base.ApplicationHandler(),
+		Type:    base.WmCreate,
+		Value:   &c1,
+	})
 
 	app, _ := base.NewApplication(&c1)
 

@@ -182,7 +182,7 @@ func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.
 }
 
 // View3 is not visible.
-func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
+func TestHelper_View3_is_not_visible_CalculateDrawZone2(t *testing.T) {
 	view1 := NewView("view1")
 	view1.SetBounds(Rect{
 		X:      2,
@@ -216,7 +216,7 @@ func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
 		Height: 0,
 	}
 
-	r := CalculateAbsolutePosition(&view3)
+	r := CalculateDrawZone(&view3)
 
 	if r != result {
 		t.Errorf("Should be return %+v, return %+v", result, r)
@@ -224,7 +224,7 @@ func TestHelper_View3_is_not_visible_CalculateAbsolutePosition2(t *testing.T) {
 }
 
 // View2 is not visible.
-func TestHelper_View2_is_not_visible_CalculateAbsolutePosition3(t *testing.T) {
+func TestHelper_View2_is_not_visible_CalculateDrawZone3(t *testing.T) {
 	view1 := NewView("view1")
 	view1.SetBounds(Rect{
 		X:      2,
@@ -258,7 +258,7 @@ func TestHelper_View2_is_not_visible_CalculateAbsolutePosition3(t *testing.T) {
 		Height: 0,
 	}
 
-	r := CalculateAbsolutePosition(&view3)
+	r := CalculateDrawZone(&view3)
 
 	if r != result {
 		t.Errorf("Should be return %+v, return %+v", result, r)

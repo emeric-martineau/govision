@@ -55,6 +55,12 @@ const WmChangeBounds uint = 0x07
 // WmTimer send to Timer parent component if OnTimer is nil.
 const WmTimer uint = 0x08
 
+// WmCreate sent when you have create windows and want add in list.
+const WmCreate uint = 0x09
+
+// WmDestroy sent when you want remove windows from list and let GC remove it.
+const WmDestroy uint = 0x0A
+
 // WmUser allow user to have own message.
 const WmUser uint = ^uint(0) / 2
 
@@ -109,8 +115,8 @@ func BuildZorderMessage(handler uuid.UUID) Message {
 	}
 }
 
-// BuildChangeBounds return a message to change bounds of component.
-func BuildChangeBounds(handler uuid.UUID, bounds Rect) Message {
+// BuildChangeBoundsMessage return a message to change bounds of component.
+func BuildChangeBoundsMessage(handler uuid.UUID, bounds Rect) Message {
 	return Message{
 		Handler: handler,
 		Type:    WmChangeBounds,

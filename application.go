@@ -15,8 +15,11 @@ package base
 // limitations under the License.
 
 import (
+	"fmt"
 	"os"
 	"strings"
+
+	"container/list"
 
 	"github.com/gdamore/tcell"
 )
@@ -27,6 +30,8 @@ type Application struct {
 	mainWindow TComponent
 	// Quit application on Ctrl+C.
 	ExitOnCtrlC bool
+	// Windows list. The First item is Windows that have focus.
+	windowsList *list.List
 }
 
 // MainWindow return main windows.
@@ -62,7 +67,9 @@ func (a Application) Run() {
 
 	screen.Clear()
 
-	var currentMessage Message
+	applicationHandler := ApplicationHandler()
+
+	var msg Message
 	doContinue := true
 
 	// First time send draw message to create screen.
@@ -75,28 +82,77 @@ func (a Application) Run() {
 	previousMessageType := WmDraw
 
 	for doContinue {
-		currentMessage = <-busChannel
+		msg = <-busChannel
 
-		// TODO if mainWindow close, exit application
-
-		if currentMessage.Type == WmKey && a.ExitOnCtrlC {
-			if currentMessage.Value.(*tcell.EventKey).Key() == tcell.KeyCtrlC {
+		if msg.Type == WmKey && a.ExitOnCtrlC {
+			if msg.Value.(*tcell.EventKey).Key() == tcell.KeyCtrlC {
 				doContinue = false
 			} else {
-				a.mainWindow.HandleMessage(currentMessage)
+				doContinue = a.callFocusedWindowHandleMessage(msg)
 			}
-		} else if currentMessage.Type == WmQuit {
-			doContinue = false
+		} else if msg.Handler == applicationHandler {
+			doContinue = a.manageMyMessage(msg)
 		} else {
-			a.mainWindow.HandleMessage(currentMessage)
+			doContinue = a.callFocusedWindowHandleMessage(msg)
 
-			if currentMessage.Type == WmDraw && previousMessageType != WmDraw {
+			if msg.Type == WmDraw && previousMessageType != WmDraw {
 				screen.Sync()
 			}
 		}
 
-		previousMessageType = currentMessage.Type
+		previousMessageType = msg.Type
 	}
+}
+
+// WindowsList return the current windows list.
+// Becarefull, each call create a new array to return.
+func (a Application) WindowsList() []TComponent {
+	wl := make([]TComponent, 0)
+
+	for e := a.windowsList.Front(); e != nil; e = e.Next() {
+		wl = append(wl, e.Value.(TComponent))
+	}
+
+	return wl
+}
+
+func (a Application) manageMyMessage(msg Message) bool {
+	switch msg.Type {
+	case WmQuit:
+		return false
+	case WmCreate:
+		// Add window to list
+		a.windowsList.PushFront(msg.Value)
+	case WmDestroy:
+		// Remove window to list and check is MainWindow
+		for e := a.windowsList.Front(); e != nil; e = e.Next() {
+			fmt.Printf("%+v\n", e.Value)
+			if msg.Value == e.Value {
+				a.windowsList.Remove(e)
+
+				if msg.Value == a.mainWindow {
+					return false
+				}
+
+				return true
+			}
+		}
+	}
+
+	return true
+}
+
+// Call focused windows if not nil.
+func (a Application) callFocusedWindowHandleMessage(msg Message) bool {
+	w := a.windowsList.Front()
+
+	if w == nil {
+		return false
+	}
+
+	w.Value.(TComponent).HandleMessage(msg)
+
+	return true
 }
 
 // Run in go function to wait keyboard or mouse event.
@@ -136,6 +192,7 @@ func NewApplication(mainWindow TComponent) (Application, error) {
 	app := Application{
 		mainWindow:  mainWindow,
 		ExitOnCtrlC: true,
+		windowsList: list.New(),
 	}
 
 	return app, nil

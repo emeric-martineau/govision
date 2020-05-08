@@ -99,12 +99,14 @@ func (v *View) Draw() {
 		return
 	}
 
+	PrintStringOnScreen(tcell.ColorBlack, tcell.ColorYellow, 0, 0, "component")
+
 	style := tcell.StyleDefault.
 		Foreground(v.foregroundColor).
 		Background(v.backgroundColor)
 
 	// Get parent X and Y
-	bounds := CalculateAbsolutePosition(v)
+	bounds := CalculateDrawZone(v)
 
 	// If component is more biggest than parent
 	startX := bounds.X

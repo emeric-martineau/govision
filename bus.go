@@ -24,7 +24,7 @@ var busChannel chan Message
 var broadcastHandler uuid.UUID = [16]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 
 // Is use to send message to application only.
-var nullHandler uuid.UUID = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+var applicationHandler uuid.UUID = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
 // Inits a new bus.
 func init() {
@@ -41,7 +41,19 @@ func BroadcastHandler() uuid.UUID {
 	return broadcastHandler
 }
 
-// NullHandler is use to send message to application only.
-func NullHandler() uuid.UUID {
-	return nullHandler
+// ApplicationHandler is use to send message to application only.
+func ApplicationHandler() uuid.UUID {
+	return applicationHandler
+}
+
+// ClearAllMessages clear all messages.
+func ClearAllMessages() {
+L:
+	for {
+		select {
+		case <-busChannel:
+		default:
+			break L
+		}
+	}
 }

@@ -52,7 +52,7 @@ func timer1Gone(t *components.Timer) {
 		tcell.ColorWhite, 0, 0,
 		fmt.Sprintf("%+v", r))
 
-	base.SendMessage(base.BuildChangeBounds(view3.Handler(), r))
+	base.SendMessage(base.BuildChangeBoundsMessage(view3.Handler(), r))
 }
 
 func testOnDraw(v base.TView, s tcell.Screen) {

@@ -25,6 +25,7 @@ import (
 func TestBus_GetChannelMessage_and_SendMessage(t *testing.T) {
 	m := BuildEmptyMessage()
 	SendMessage(m)
+	ApplicationHandler()
 }
 
 func TestBus_BroadcastHandler(t *testing.T) {

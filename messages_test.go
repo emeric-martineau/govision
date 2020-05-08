@@ -26,7 +26,7 @@ func TestMessage_Messages(t *testing.T) {
 	BuildEmptyMessage()
 	BuildDrawMessage(uuid)
 	BuildKeyMessage(nil)
-	BuildChangeBounds(uuid, Rect{})
+	BuildChangeBoundsMessage(uuid, Rect{})
 	BuildZorderMessage(uuid)
 	BuildScreenResizeMessage()
 }
