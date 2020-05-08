@@ -71,27 +71,27 @@ func (a Application) Run() {
 	doContinue := true
 
 	// First time send draw message to create screen.
-	SendMessage(BuildDrawMessage(a.mainWindow.Handler()))
+	a.config.Message.Send(BuildDrawMessage(a.mainWindow.Handler()))
 
-	go poolEvent(a.config.Screen)
+	go poolEvent(a.config.Screen, a.config.Message)
 
 	// Remember last message type cause many WmDraw can occure. If that, don't
 	// refresh screen. Only if previous message is not a draw.
 	previousMessageType := WmDraw
 
 	for doContinue {
-		msg = <-busChannel
+		msg = <-*a.config.Message.Channel()
 
 		if msg.Type == WmKey && a.ExitOnCtrlC {
 			if msg.Value.(*tcell.EventKey).Key() == tcell.KeyCtrlC {
 				doContinue = false
 			} else {
-				doContinue = a.callFocusedWindowHandleMessage(msg)
+				a.callFocusedWindowHandleMessage(msg)
 			}
 		} else if msg.Handler == applicationHandler {
 			doContinue = a.manageMyMessage(msg)
 		} else {
-			doContinue = a.callFocusedWindowHandleMessage(msg)
+			a.callFocusedWindowHandleMessage(msg)
 
 			if msg.Type == WmDraw && previousMessageType != WmDraw {
 				a.config.Screen.Sync()
@@ -145,43 +145,42 @@ func (a Application) manageMyMessage(msg Message) bool {
 }
 
 // Call focused windows if not nil.
-func (a Application) callFocusedWindowHandleMessage(msg Message) bool {
+// Return false if need stop application.
+func (a Application) callFocusedWindowHandleMessage(msg Message) {
 	w := a.windowsList.Front()
 
-	if w == nil {
-		return false
-	}
-
 	w.Value.(TComponent).HandleMessage(msg)
-
-	return true
 }
 
 // Run in go function to wait keyboard or mouse event.
-func poolEvent(screen tcell.Screen) {
+func poolEvent(screen tcell.Screen, message Bus) {
 	for {
 		ev := screen.PollEvent()
 
 		switch ev := ev.(type) { // TODO Mouse message
 		case *tcell.EventKey:
-			SendMessage(Message{
+			message.Send(Message{
 				Handler: BroadcastHandler(),
 				Type:    WmKey,
 				Value:   ev,
 			})
 		case *tcell.EventResize:
 			screen.Sync()
-			SendMessage(BuildScreenResizeMessage(screen))
+			message.Send(BuildScreenResizeMessage(screen))
 		}
 	}
 }
 
 // NewApplication create a text application.
 func NewApplication(mainWindow TComponent, config ApplicationConfig) Application {
+	wl := list.New()
+
+	wl.PushFront(mainWindow)
+
 	return Application{
 		mainWindow:  mainWindow,
 		ExitOnCtrlC: true,
-		windowsList: list.New(),
+		windowsList: wl,
 		config:      config,
 	}
 }

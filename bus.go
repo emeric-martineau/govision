@@ -18,22 +18,25 @@ import (
 	"github.com/google/uuid"
 )
 
-var busChannel chan Message
-
 // Is use to send message to all components.
 var broadcastHandler uuid.UUID = [16]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 
 // Is use to send message to application only.
 var applicationHandler uuid.UUID = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
-// Inits a new bus.
-func init() {
-	busChannel = make(chan Message, 10)
+// Bus bus message.
+type Bus struct {
+	busChannel chan Message
 }
 
-// SendMessage a event in bus.
-func SendMessage(e Message) {
-	busChannel <- e
+// Send a event in bus.
+func (b Bus) Send(e Message) {
+	b.busChannel <- e
+}
+
+// Channel a event in bus.
+func (b Bus) Channel() *chan Message {
+	return &b.busChannel
 }
 
 // BroadcastHandler return value for broadcast all component.
@@ -46,14 +49,9 @@ func ApplicationHandler() uuid.UUID {
 	return applicationHandler
 }
 
-// ClearAllMessages clear all messages.
-func ClearAllMessages() {
-L:
-	for {
-		select {
-		case <-busChannel:
-		default:
-			break L
-		}
+// NewBus create a new bus.
+func NewBus() Bus {
+	return Bus{
+		busChannel: make(chan Message, 10),
 	}
 }

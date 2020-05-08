@@ -34,6 +34,7 @@ func CreateTestApplicationConfig() ApplicationConfig {
 	return ApplicationConfig{
 		ScreenStyle: screenStyle,
 		Screen:      screen,
+		Message:     NewBus(),
 	}
 }
 
@@ -44,12 +45,55 @@ func TestApplication_Exit_on_CtrlC(t *testing.T) {
 
 	app := NewApplication(&mainWindow, appConfig)
 
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
 	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		appConfig.Screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		app.Config().Screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+
+		app.Run()
+	}
+}
+
+func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	mainWindow := NewComponent("window1", appConfig)
+	window1 := NewComponent("window2", appConfig)
+
+	app := NewApplication(&mainWindow, appConfig)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		appConfig.Message.Send(Message{
+			Handler: ApplicationHandler(),
+			Type:    WmCreate,
+			Value:   &window1,
+		})
+
+		appConfig.Message.Send(Message{
+			Handler: ApplicationHandler(),
+			Type:    WmDestroy,
+			Value:   &window1,
+		})
+
+		appConfig.Message.Send(Message{
+			Handler: ApplicationHandler(),
+			Type:    WmDestroy,
+			Value:   &mainWindow,
+		})
 
 		app.Run()
 	}
@@ -68,7 +112,7 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 			//t.Errorf("Windows list must have only 1 component. Found %d!", count)
 		}
 
-		SendMessage(Message{
+		appConfig.Message.Send(Message{
 			Handler: ApplicationHandler(),
 			Type:    WmQuit,
 		})
@@ -81,16 +125,10 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		SendMessage(Message{
-			Handler: ApplicationHandler(),
-			Type:    WmCreate,
-			Value:   &mainWindow,
-		})
-
 		// Just for code coverage
-		SendMessage(BuildEmptyMessage())
-		SendMessage(BuildKeyMessage(tcell.NewEventKey(tcell.KeyCtrlD, '&', tcell.ModCtrl)))
-		SendMessage(BuildDrawMessage(BroadcastHandler()))
+		appConfig.Message.Send(BuildEmptyMessage())
+		appConfig.Message.Send(BuildKeyMessage(tcell.NewEventKey(tcell.KeyCtrlD, '&', tcell.ModCtrl)))
+		appConfig.Message.Send(BuildDrawMessage(BroadcastHandler()))
 
 		app.Run()
 	}
@@ -102,7 +140,7 @@ func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 	mainWindow := NewComponent("window3", appConfig)
 
 	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
-		SendMessage(Message{
+		appConfig.Message.Send(Message{
 			Handler: ApplicationHandler(),
 			Type:    WmDestroy,
 			Value:   c,
@@ -118,13 +156,7 @@ func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		SendMessage(Message{
-			Handler: ApplicationHandler(),
-			Type:    WmCreate,
-			Value:   &mainWindow,
-		})
-
-		SendMessage(Message{
+		appConfig.Message.Send(Message{
 			Handler: mainWindow.Handler(),
 			Type:    WmDraw,
 		})

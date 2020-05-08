@@ -44,7 +44,7 @@ type Window struct {
 }
 
 // ┌─[■]    ─┐
-func DrawTitleBar(titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
+func DrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
 	titleBar := make([]rune, base.MaxInt(titleBounds.Width, drawBounds.Width))
 	titleBarLen := len(titleBar)
 	indexTitleBar := 0
@@ -114,8 +114,7 @@ func DrawTitleBar(titleBounds base.Rect, drawBounds base.Rect, caption string, s
 
 	titleBar[indexTitleBar] = tcell.RuneURCorner
 
-	base.AppScreen().Screen().
-		SetContent(titleBounds.X, titleBounds.Y, titleBar[0], titleBar[1:], style)
+	screen.SetContent(titleBounds.X, titleBounds.Y, titleBar[0], titleBar[1:], style)
 }
 
 // GetClientBounds return client bounds.
@@ -141,7 +140,7 @@ func (w Window) Draw() {
 	clientBounds := calculateClientBounds(absoluteBounds, w.BorderStyle)
 
 	// Draw background of window
-	base.Fill(clientBounds, drawBounds, style)
+	base.Fill(w.AppConfig().Screen, clientBounds, drawBounds, style)
 
 	// Draw title
 	titleBounds := base.Rect{
@@ -155,7 +154,7 @@ func (w Window) Draw() {
 		Foreground(w.GetForegroundColor()).
 		Background(tcell.ColorBlue)
 
-	DrawTitleBar(titleBounds, drawBounds, "Hello", titleStyle, w.BorderStyle)
+	DrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, "Hello", titleStyle, w.BorderStyle)
 	/*
 		titleStyle := tcell.StyleDefault.
 			Foreground(w.GetForegroundColor()).
@@ -194,7 +193,7 @@ func (w Window) manageMyMessage(msg base.Message) {
 		// TODO minimum Width/Height -> 2
 		w.SetBounds(msg.Value.(base.Rect))
 		// Redraw all components cause maybe overide a component with Zorder
-		base.SendMessage(base.BuildDrawMessage(base.BroadcastHandler()))
+		w.AppConfig().Message.Send(base.BuildDrawMessage(base.BroadcastHandler()))
 	}
 }
 
@@ -230,12 +229,12 @@ func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect 
 }
 
 // NewWindow create new window.
-func NewWindow(name string) Window {
+func NewWindow(name string, config base.ApplicationConfig) Window {
 	w := Window{
-		View: base.NewView(name),
+		View: base.NewView(name, config),
 	}
 
-	base.SendMessage(BuildCreateWindowMessage(&w))
+	config.Message.Send(BuildCreateWindowMessage(&w))
 
 	return w
 }

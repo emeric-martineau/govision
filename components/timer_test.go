@@ -19,21 +19,39 @@ import (
 	"time"
 
 	base "github.com/emeric-martineau/govision"
+	"github.com/gdamore/tcell"
 )
 
+func CreateTestApplicationConfig() base.ApplicationConfig {
+	screen := tcell.NewSimulationScreen("")
+
+	// Screen application.
+	screenStyle := base.ApplicationStyle{
+		Style:           tcell.StyleDefault,
+		ForegroundColor: tcell.ColorWhite,
+		BackgroundColor: tcell.ColorBlack,
+	}
+
+	return base.ApplicationConfig{
+		ScreenStyle: screenStyle,
+		Screen:      screen,
+		Message:     base.NewBus(),
+	}
+}
+
 func TestTime_Codecoverage(t *testing.T) {
-	timer1 := NewTimer("timer1", 10*time.Millisecond)
+	timer1 := NewTimer("timer1", 10*time.Millisecond, CreateTestApplicationConfig())
 	timer1.GetIntervale()
 	timer1.SetEnabled(true)
 	timer1.SetEnabled(false)
 }
 
 func TestTime_OnTimer(t *testing.T) {
-	busChannel := make(chan bool)
+	appConfig := CreateTestApplicationConfig()
 
-	timer1 := NewTimer("timer1", 10*time.Millisecond)
+	timer1 := NewTimer("timer1", 10*time.Millisecond, appConfig)
 	timer1.OnTimer = func(t *Timer) {
-		busChannel <- true
+		appConfig.Message.Send(base.Message{})
 	}
 
 	timeOut := time.NewTimer(50 * time.Millisecond)
@@ -43,19 +61,20 @@ func TestTime_OnTimer(t *testing.T) {
 	select {
 	case <-timeOut.C:
 		t.Error("OnTimer not called!")
-	case <-busChannel:
+	case <-*appConfig.Message.Channel():
 	}
 }
 
 func TestTime_WmEnable(t *testing.T) {
 	isCalled := false
+	appConfig := CreateTestApplicationConfig()
 
-	c1 := base.NewComponent("c1")
+	c1 := base.NewComponent("c1", appConfig)
 	c1.OnReceiveMessage = func(c base.TComponent, m base.Message) bool {
 		switch m.Type {
 		case base.WmTimer:
 			isCalled = true
-			base.SendMessage(base.Message{
+			appConfig.Message.Send(base.Message{
 				Handler: base.ApplicationHandler(),
 				Type:    base.WmQuit,
 			})
@@ -64,17 +83,17 @@ func TestTime_WmEnable(t *testing.T) {
 		return false
 	}
 
-	timer1 := NewTimer("timer1", 0)
+	timer1 := NewTimer("timer1", 0, appConfig)
 	timer1.SetParent(&c1)
 
 	// AddChild is not necessary
-	base.SendMessage(base.Message{
+	appConfig.Message.Send(base.Message{
 		Handler: base.ApplicationHandler(),
 		Type:    base.WmCreate,
 		Value:   &c1,
 	})
 
-	app, _ := base.NewApplication(&c1)
+	app := base.NewApplication(&c1, appConfig)
 
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
@@ -91,12 +110,12 @@ func TestTime_WmEnable(t *testing.T) {
 }
 
 func TestTime_SetInterval_if_enable(t *testing.T) {
-	busChannel := make(chan bool)
+	appConfig := CreateTestApplicationConfig()
 
-	timer1 := NewTimer("timer1", 5*time.Millisecond)
+	timer1 := NewTimer("timer1", 5*time.Millisecond, appConfig)
 
 	OnTimer2 := func(t *Timer) {
-		busChannel <- true
+		appConfig.Message.Send(base.Message{})
 	}
 
 	OnTimer1 := func(t *Timer) {
@@ -113,14 +132,14 @@ func TestTime_SetInterval_if_enable(t *testing.T) {
 	select {
 	case <-timeOut.C:
 		t.Error("OnTimer not called!")
-	case <-busChannel:
+	case <-*appConfig.Message.Channel():
 	}
 }
 
 func TestTime_OnTimer_disable_timer(t *testing.T) {
-	busChannel := make(chan bool)
+	appConfig := CreateTestApplicationConfig()
 
-	timer1 := NewTimer("timer1", 10*time.Millisecond)
+	timer1 := NewTimer("timer1", 10*time.Millisecond, appConfig)
 	timer1.OnTimer = func(t *Timer) {
 		t.SetEnabled(false)
 	}
@@ -131,7 +150,7 @@ func TestTime_OnTimer_disable_timer(t *testing.T) {
 
 	select {
 	case <-timeOut.C:
-	case <-busChannel:
+	case <-*appConfig.Message.Channel():
 		t.Error("OnTimer not called!")
 	}
 }

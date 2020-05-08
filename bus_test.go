@@ -24,7 +24,7 @@ import (
 
 func TestBus_GetChannelMessage_and_SendMessage(t *testing.T) {
 	m := BuildEmptyMessage()
-	SendMessage(m)
+	NewBus().Send(m)
 	ApplicationHandler()
 }
 

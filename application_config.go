@@ -27,6 +27,8 @@ type ApplicationConfig struct {
 	ScreenStyle ApplicationStyle
 	// Screen of application.
 	Screen tcell.Screen
+	// Message bus.
+	Message Bus
 }
 
 // ApplicationStyle is style of screen for application.
@@ -58,5 +60,6 @@ func CreateDefaultApplicationConfig() ApplicationConfig {
 	return ApplicationConfig{
 		ScreenStyle: screenStyle,
 		Screen:      screen,
+		Message:     NewBus(),
 	}
 }

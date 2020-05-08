@@ -136,7 +136,7 @@ func (v *View) manageMyMessage(msg Message) {
 	case WmChangeBounds:
 		v.bounds = msg.Value.(Rect)
 		// Redraw all components cause maybe overide a component with Zorder
-		SendMessage(BuildDrawMessage(BroadcastHandler()))
+		v.AppConfig().Message.Send(BuildDrawMessage(BroadcastHandler()))
 	}
 }
 

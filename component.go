@@ -106,7 +106,7 @@ func (c *Component) reorderChildren() {
 	sort.Sort(ByZorder(c.children))
 
 	// Redraw me. Use message to refresh screen.
-	SendMessage(BuildDrawMessage(c.Handler()))
+	c.appConfig.Message.Send(BuildDrawMessage(c.Handler()))
 }
 
 func (c *Component) drawChildren() {
