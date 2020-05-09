@@ -41,7 +41,7 @@ func main() {
 		X:      5,
 		Y:      8,
 		Height: 10,
-		Width:  30,
+		Width:  41,
 	})
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)

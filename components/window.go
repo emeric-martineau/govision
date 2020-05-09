@@ -55,7 +55,10 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 	// TODO change char with border style
 	// Draw close only if available space for
 	// ┌─[■]─┐
+	// Need space before and after caption -> +2
 	if titleBounds.Width >= minimumTitleBar {
+		const minimumTitleBarWithCaption = minimumTitleBar + 2
+
 		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style) // [1]
 		indexTitleBar++
 		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, '[', nil, style) // [2]
@@ -66,23 +69,30 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ']', nil, style) // [4]
 		indexTitleBar++
 
+		paddingLen := titleBounds.Width - len(caption) - 2
+		paddingLenLeft := (paddingLen / 2)
+
 		// Need space before and after caption -> +2
 		// ─── Title ────
-		if titleBounds.Width > len(caption)+minimumTitleBar+2 {
-			paddingLen := (titleBounds.Width - len(caption) - minimumTitleBar - 2)
-			paddingLenLeft := paddingLen / 2
-
+		if titleBounds.Width > minimumTitleBarWithCaption {
 			// Border before caption
 			// ──────── Hello
-			for i := 0; i < paddingLenLeft; i++ {
+			for ; indexTitleBar < paddingLenLeft; indexTitleBar++ {
 				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
-				indexTitleBar++
 			}
 
 			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ' ', nil, style)
 			indexTitleBar++
 
-			c := []rune(caption)
+			var c []rune
+
+			if titleBounds.Width > len(caption)+minimumTitleBarWithCaption {
+				c = []rune(caption)
+			} else {
+				// If we don't have enought space to draw title
+				len := titleBounds.Width - minimumTitleBarWithCaption
+				c = []rune(caption[:len])
+			}
 
 			// Draw caption
 			for i := 0; i < len(c); i++ {
@@ -99,14 +109,21 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
 				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
 			}
+
+			// TODO add up/down button
+
 		} else {
-			// TODO can't draw caption fully
+			// No space to draw caption
+			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+			}
 		}
 	} else {
-		// TODO no space to draw close button
+		// No space to draw close button
+		for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
+			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+		}
 	}
-
-	// TODO add up/down button
 
 	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneURCorner, nil, style)
 }
