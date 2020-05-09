@@ -41,11 +41,11 @@ func main() {
 		X:      5,
 		Y:      8,
 		Height: 10,
-		Width:  41,
+		Width:  13,
 	})
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
-	mainWindow.BorderStyle = components.BorderStyleSingle
+	mainWindow.BorderStyle = components.BorderStyleEmpty
 
 	application.Run()
 }

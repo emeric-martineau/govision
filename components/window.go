@@ -20,15 +20,38 @@ import (
 )
 
 const (
-	// BorderStyleNone windows don't have border (hard to resize.)
-	BorderStyleNone = iota
 	// BorderStyleSingle border with single line.
-	BorderStyleSingle
+	BorderStyleSingle = 0
 	// BorderStyleDouble border with double line.
-	BorderStyleDouble
+	BorderStyleDouble = 1
 	// BorderStyleEmpty border without line.
-	BorderStyleEmpty
+	BorderStyleEmpty = 2
+
+	// Index for draw windows border.
+
+	// ULCorner upper left corner.
+	ULCorner = 0
+	// HLine horizontal line.
+	HLine = 1
+	// CloseLeft close character left.
+	CloseLeft = 2
+	// CloseRight close character right.
+	CloseRight = 3
+	// Close close character.
+	Close = 4
+	// URCorner upper right corner.
+	URCorner = 5
+	// CaptionSpace space before/after caption in title bar.
+	CaptionSpace = 6
+	// LLCorner lower left corner.
+	LLCorner = 7
+	// LRCorner lower right corner.
+	LRCorner = 8
+	// VLine vertical line.
+	VLine = 9
 )
+
+var bordersChars [][]rune
 
 // BorderStyle border of window.
 type BorderStyle int
@@ -43,30 +66,77 @@ type Window struct {
 	base.View
 }
 
+func init() {
+	bordersChars = make([][]rune, 3)
+
+	borderStyleSingle := make([]rune, 10)
+
+	borderStyleSingle[ULCorner] = tcell.RuneULCorner
+	borderStyleSingle[HLine] = tcell.RuneHLine
+	borderStyleSingle[CloseLeft] = '['
+	borderStyleSingle[CloseRight] = ']'
+	borderStyleSingle[Close] = '■'
+	borderStyleSingle[URCorner] = tcell.RuneURCorner
+	borderStyleSingle[CaptionSpace] = ' '
+	borderStyleSingle[LLCorner] = tcell.RuneLLCorner
+	borderStyleSingle[LRCorner] = tcell.RuneLRCorner
+	borderStyleSingle[VLine] = tcell.RuneVLine
+
+	borderStyleDouble := make([]rune, 10)
+
+	borderStyleDouble[ULCorner] = '╔'
+	borderStyleDouble[HLine] = '═'
+	borderStyleDouble[CloseLeft] = '['
+	borderStyleDouble[CloseRight] = ']'
+	borderStyleDouble[Close] = '■'
+	borderStyleDouble[URCorner] = '╗'
+	borderStyleDouble[CaptionSpace] = ' '
+	borderStyleDouble[LLCorner] = '╚'
+	borderStyleDouble[LRCorner] = '╝'
+	borderStyleDouble[VLine] = '║'
+
+	borderStyleEmpty := make([]rune, 10)
+
+	borderStyleEmpty[ULCorner] = ' '
+	borderStyleEmpty[HLine] = ' '
+	borderStyleEmpty[CloseLeft] = '['
+	borderStyleEmpty[CloseRight] = ']'
+	borderStyleEmpty[Close] = '■'
+	borderStyleEmpty[URCorner] = ' '
+	borderStyleEmpty[CaptionSpace] = ' '
+	borderStyleEmpty[LLCorner] = ' '
+	borderStyleEmpty[LRCorner] = ' '
+	borderStyleEmpty[VLine] = ' '
+
+	bordersChars[BorderStyleSingle] = borderStyleSingle
+	bordersChars[BorderStyleDouble] = borderStyleDouble
+	bordersChars[BorderStyleEmpty] = borderStyleEmpty
+}
+
 // DefaultDrawTitleBar default draw for title bar.
 // Give ┌─[■]─ My title ─┐
-func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
+func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
 	indexTitleBar := 0
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneULCorner, nil, style) // [1]
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[ULCorner], nil, style) // [1]
 	indexTitleBar++
 
 	const minimumTitleBar = 7
-	// TODO change char with border style
+
 	// Draw close only if available space for
 	// ┌─[■]─┐
 	// Need space before and after caption -> +2
 	if titleBounds.Width >= minimumTitleBar {
 		const minimumTitleBarWithCaption = minimumTitleBar + 2
 
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style) // [1]
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style) // [1]
 		indexTitleBar++
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, '[', nil, style) // [2]
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseLeft], nil, style) // [2]
 		indexTitleBar++
 		// TODO set color for close button
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, '■', nil, style) // [3]
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[Close], nil, style) // [3]
 		indexTitleBar++
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ']', nil, style) // [4]
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseRight], nil, style) // [4]
 		indexTitleBar++
 
 		paddingLen := titleBounds.Width - len(caption) - 2
@@ -78,10 +148,10 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 			// Border before caption
 			// ──────── Hello
 			for ; indexTitleBar < paddingLenLeft; indexTitleBar++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
 			}
 
-			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ' ', nil, style)
+			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CaptionSpace], nil, style)
 			indexTitleBar++
 
 			var c []rune
@@ -100,14 +170,14 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 				indexTitleBar++
 			}
 
-			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, ' ', nil, style)
+			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CaptionSpace], nil, style)
 			indexTitleBar++
 
 			// Border after caption
 			// Hello ────
 			// -1 cause last char is corner
 			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
 			}
 
 			// TODO add up/down button
@@ -115,44 +185,43 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 		} else {
 			// No space to draw caption
 			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
 			}
 		}
 	} else {
 		// No space to draw close button
 		for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
 		}
 	}
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneURCorner, nil, style)
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[URCorner], nil, style)
 }
 
 // DefaultDrawBottomBar draw bottom border of window.
 // Give └───────────┘
-func DefaultDrawBottomBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
+func DefaultDrawBottomBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
 	indexTitleBar := 0
 
 	// TODO if not fully visible
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneLLCorner, nil, style) // [0]
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[LLCorner], nil, style) // [0]
 	indexTitleBar++
 
-	// TODO change char with border style
 	// -1 cause last char is corner
 	for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneHLine, nil, style)
+		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
 	}
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, tcell.RuneLRCorner, nil, style)
+	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[LRCorner], nil, style)
 }
 
 // DefaultDrawLeftOrRightBorder draw left or right border of window.
-func DefaultDrawLeftOrRightBorder(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borderStyle BorderStyle) {
+func DefaultDrawLeftOrRightBorder(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
 	titleBarLen := titleBounds.Height
 
 	for indexTitleBar := 0; indexTitleBar < titleBarLen; indexTitleBar++ {
-		screen.SetContent(titleBounds.X, titleBounds.Y+indexTitleBar, tcell.RuneVLine, nil, style)
+		screen.SetContent(titleBounds.X, titleBounds.Y+indexTitleBar, borders[VLine], nil, style)
 	}
 }
 
@@ -203,7 +272,7 @@ func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, border
 	}
 
 	DefaultDrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, w.Caption,
-		borderStyle, w.BorderStyle)
+		borderStyle, bordersChars[w.BorderStyle])
 }
 
 func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
@@ -215,7 +284,7 @@ func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borde
 	}
 
 	DefaultDrawBottomBar(w.AppConfig().Screen, bottomBorderBounds, drawBounds, w.Caption,
-		borderStyle, w.BorderStyle)
+		borderStyle, bordersChars[w.BorderStyle])
 }
 
 func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
@@ -227,7 +296,7 @@ func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, b
 	}
 
 	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, w.BorderStyle)
+		borderStyle, bordersChars[w.BorderStyle])
 }
 
 func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
@@ -239,7 +308,7 @@ func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, 
 	}
 
 	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, w.BorderStyle)
+		borderStyle, bordersChars[w.BorderStyle])
 }
 
 // Manage message if it's for me.
@@ -278,18 +347,25 @@ func (w Window) HandleMessage(msg base.Message) bool {
 }
 
 func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect {
-	switch borderStyle {
-	case BorderStyleNone:
-		// Remove titlebar
-		bounds.Y++
-		bounds.Height--
-	default:
-		// Remove titlebar and border
-		bounds.Y++
-		bounds.X++
-		bounds.Height -= 2
-		bounds.Width -= 2
-	}
+	/*
+		  TODO window type
+			switch borderStyle {
+			case BorderStyleNone:
+				// Remove titlebar
+				bounds.Y++
+				bounds.Height--
+			default:
+				// Remove titlebar and border
+				bounds.Y++
+				bounds.X++
+				bounds.Height -= 2
+				bounds.Width -= 2
+			}*/
+
+	bounds.Y++
+	bounds.X++
+	bounds.Height -= 2
+	bounds.Width -= 2
 
 	return bounds
 }
