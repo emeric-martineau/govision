@@ -113,6 +113,190 @@ func init() {
 	bordersChars[BorderStyleEmpty] = borderStyleEmpty
 }
 
+// GetClientBounds return client bounds.
+func (w Window) GetClientBounds() base.Rect {
+	return calculateClientBounds(w.GetBounds(), w.BorderStyle)
+}
+
+// Draw the view.
+func (w Window) Draw() {
+	if !w.GetVisible() {
+		return
+	}
+
+	style := tcell.StyleDefault.
+		Foreground(w.GetForegroundColor()).
+		Background(w.GetBackgroundColor())
+
+	// Get parent X and Y
+	absoluteBounds := base.CalculateAbsolutePosition(&w)
+	// Get real zone whe can draw
+	drawBounds := base.CalculateDrawZone(&w)
+	// Get client bould to draw
+	clientBounds := calculateClientBounds(absoluteBounds, w.BorderStyle)
+
+	// Draw background of window
+	base.Fill(w.AppConfig().Screen, clientBounds, drawBounds, style)
+
+	borderStyle := tcell.StyleDefault.
+		Foreground(w.GetForegroundColor()).
+		Background(tcell.ColorBlue)
+
+	drawTitle(absoluteBounds, drawBounds, &w, borderStyle)
+
+	drawBottom(absoluteBounds, drawBounds, &w, borderStyle)
+
+	drawBorderLeft(absoluteBounds, drawBounds, &w, borderStyle)
+
+	drawBorderRight(absoluteBounds, drawBounds, &w, borderStyle)
+}
+
+func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	titleBounds := base.Rect{
+		X:      absoluteBounds.X,
+		Y:      absoluteBounds.Y,
+		Width:  absoluteBounds.Width,
+		Height: 1,
+	}
+
+	DefaultDrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, w.Caption,
+		borderStyle, bordersChars[w.BorderStyle])
+}
+
+func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	bottomBorderBounds := base.Rect{
+		X:      absoluteBounds.X,
+		Y:      absoluteBounds.Y + absoluteBounds.Height - 1,
+		Width:  absoluteBounds.Width,
+		Height: 1,
+	}
+
+	DefaultDrawBottomBar(w.AppConfig().Screen, bottomBorderBounds, drawBounds, w.Caption,
+		borderStyle, bordersChars[w.BorderStyle])
+}
+
+func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	leftBorderBounds := base.Rect{
+		X:      absoluteBounds.X,
+		Y:      absoluteBounds.Y + 1,
+		Width:  1,
+		Height: absoluteBounds.Height - 2,
+	}
+
+	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
+		borderStyle, bordersChars[w.BorderStyle])
+}
+
+func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+	leftBorderBounds := base.Rect{
+		X:      absoluteBounds.X + absoluteBounds.Width - 1,
+		Y:      absoluteBounds.Y + 1,
+		Width:  1,
+		Height: absoluteBounds.Height - 2,
+	}
+
+	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
+		borderStyle, bordersChars[w.BorderStyle])
+}
+
+// Manage message if it's for me.
+// Return true to stop message propagation.
+func (w Window) manageMyMessage(msg base.Message) {
+	switch msg.Type {
+	case base.WmDraw:
+		if w.OnDraw != nil {
+			w.OnDraw(&w)
+		} else {
+			w.Draw()
+			// Redraw children.
+			w.Component.HandleMessage(base.BuildDrawMessage(base.BroadcastHandler()))
+		}
+	case base.WmChangeBounds:
+		// Minimum Width/Height -> 2
+		bounds := msg.Value.(base.Rect)
+
+		bounds.Width = base.MaxInt(bounds.Width, 2)
+		bounds.Height = base.MaxInt(bounds.Height, 2)
+
+		w.SetBounds(bounds)
+		// Redraw all components cause maybe overide a component with Zorder
+		w.AppConfig().Message.Send(base.BuildDrawMessage(base.BroadcastHandler()))
+	}
+}
+
+// HandleMessage is use to manage message.
+func (w Window) HandleMessage(msg base.Message) bool {
+
+	switch msg.Handler {
+	case w.Handler():
+		w.manageMyMessage(msg)
+		return true
+	case base.BroadcastHandler():
+		w.manageMyMessage(msg)
+	}
+
+	// Because Component send message to child if broadcast or draw.
+	return w.Component.HandleMessage(base.BuildDrawMessage(base.BroadcastHandler()))
+}
+
+func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect {
+	/*
+		  TODO window type
+			switch borderStyle {
+			case BorderStyleNone:
+				// Remove titlebar
+				bounds.Y++
+				bounds.Height--
+			default:
+				// Remove titlebar and border
+				bounds.Y++
+				bounds.X++
+				bounds.Height -= 2
+				bounds.Width -= 2
+			}*/
+
+	bounds.Y++
+	bounds.X++
+	bounds.Height -= 2
+	bounds.Width -= 2
+
+	return bounds
+}
+
+// NewWindow create new window.
+func NewWindow(name string, config base.ApplicationConfig) Window {
+	w := Window{
+		View:    base.NewView(name, config),
+		Caption: name,
+	}
+
+	return w
+}
+
+//------------------------------------------------------------------------------
+// Helpher.
+
+// BuildCreateWindowMessage return a message when create window.
+func BuildCreateWindowMessage(w *Window) base.Message {
+	return base.Message{
+		Handler: base.ApplicationHandler(),
+		Type:    base.WmCreate,
+		Value:   w,
+	}
+}
+
+// BuildDestroyWindowMessage return a message when destroy window.
+func BuildDestroyWindowMessage(w *Window) base.Message {
+	return base.Message{
+		Handler: base.ApplicationHandler(),
+		Type:    base.WmDestroy,
+		Value:   w,
+	}
+}
+
+//------------------------------------------------------------------------------
+// Default draw functions.
+
 // DefaultDrawTitleBar default draw for title bar.
 // Give ┌─[■]─ My title ─┐
 func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
@@ -222,178 +406,5 @@ func DefaultDrawLeftOrRightBorder(screen tcell.Screen, titleBounds base.Rect, dr
 
 	for indexTitleBar := 0; indexTitleBar < titleBarLen; indexTitleBar++ {
 		screen.SetContent(titleBounds.X, titleBounds.Y+indexTitleBar, borders[VLine], nil, style)
-	}
-}
-
-// GetClientBounds return client bounds.
-func (w Window) GetClientBounds() base.Rect {
-	return calculateClientBounds(w.GetBounds(), w.BorderStyle)
-}
-
-// Draw the view.
-func (w Window) Draw() {
-	if !w.GetVisible() {
-		return
-	}
-
-	style := tcell.StyleDefault.
-		Foreground(w.GetForegroundColor()).
-		Background(w.GetBackgroundColor())
-
-	// Get parent X and Y
-	absoluteBounds := base.CalculateAbsolutePosition(&w)
-	// Get real zone whe can draw
-	drawBounds := base.CalculateDrawZone(&w)
-	// Get client bould to draw
-	clientBounds := calculateClientBounds(absoluteBounds, w.BorderStyle)
-
-	// Draw background of window
-	base.Fill(w.AppConfig().Screen, clientBounds, drawBounds, style)
-
-	borderStyle := tcell.StyleDefault.
-		Foreground(w.GetForegroundColor()).
-		Background(tcell.ColorBlue)
-
-	drawTitle(absoluteBounds, drawBounds, &w, borderStyle)
-
-	drawBottom(absoluteBounds, drawBounds, &w, borderStyle)
-
-	drawBorderLeft(absoluteBounds, drawBounds, &w, borderStyle)
-
-	drawBorderRight(absoluteBounds, drawBounds, &w, borderStyle)
-}
-
-func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
-	titleBounds := base.Rect{
-		X:      absoluteBounds.X,
-		Y:      absoluteBounds.Y,
-		Width:  absoluteBounds.Width,
-		Height: 1,
-	}
-
-	DefaultDrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
-}
-
-func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
-	bottomBorderBounds := base.Rect{
-		X:      absoluteBounds.X,
-		Y:      absoluteBounds.Y + absoluteBounds.Height - 1,
-		Width:  absoluteBounds.Width,
-		Height: 1,
-	}
-
-	DefaultDrawBottomBar(w.AppConfig().Screen, bottomBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
-}
-
-func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
-	leftBorderBounds := base.Rect{
-		X:      absoluteBounds.X,
-		Y:      absoluteBounds.Y + 1,
-		Width:  1,
-		Height: absoluteBounds.Height - 2,
-	}
-
-	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
-}
-
-func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
-	leftBorderBounds := base.Rect{
-		X:      absoluteBounds.X + absoluteBounds.Width - 1,
-		Y:      absoluteBounds.Y + 1,
-		Width:  1,
-		Height: absoluteBounds.Height - 2,
-	}
-
-	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
-}
-
-// Manage message if it's for me.
-// Return true to stop message propagation.
-func (w Window) manageMyMessage(msg base.Message) {
-	switch msg.Type {
-	case base.WmDraw:
-		if w.OnDraw != nil {
-			w.OnDraw(&w)
-		} else {
-			w.Draw()
-			// Redraw children.
-			w.Component.HandleMessage(base.BuildDrawMessage(base.BroadcastHandler()))
-		}
-	case base.WmChangeBounds:
-		// TODO minimum Width/Height -> 2
-		w.SetBounds(msg.Value.(base.Rect))
-		// Redraw all components cause maybe overide a component with Zorder
-		w.AppConfig().Message.Send(base.BuildDrawMessage(base.BroadcastHandler()))
-	}
-}
-
-// HandleMessage is use to manage message.
-func (w Window) HandleMessage(msg base.Message) bool {
-
-	switch msg.Handler {
-	case w.Handler():
-		w.manageMyMessage(msg)
-		return true
-	case base.BroadcastHandler():
-		w.manageMyMessage(msg)
-	}
-
-	// Because Component send message to child if broadcast or draw.
-	return w.Component.HandleMessage(base.BuildDrawMessage(base.BroadcastHandler()))
-}
-
-func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect {
-	/*
-		  TODO window type
-			switch borderStyle {
-			case BorderStyleNone:
-				// Remove titlebar
-				bounds.Y++
-				bounds.Height--
-			default:
-				// Remove titlebar and border
-				bounds.Y++
-				bounds.X++
-				bounds.Height -= 2
-				bounds.Width -= 2
-			}*/
-
-	bounds.Y++
-	bounds.X++
-	bounds.Height -= 2
-	bounds.Width -= 2
-
-	return bounds
-}
-
-// NewWindow create new window.
-func NewWindow(name string, config base.ApplicationConfig) Window {
-	w := Window{
-		View:    base.NewView(name, config),
-		Caption: name,
-	}
-
-	return w
-}
-
-// BuildCreateWindowMessage return a message when create window.
-func BuildCreateWindowMessage(w *Window) base.Message {
-	return base.Message{
-		Handler: base.ApplicationHandler(),
-		Type:    base.WmCreate,
-		Value:   w,
-	}
-}
-
-// BuildDestroyWindowMessage return a message when destroy window.
-func BuildDestroyWindowMessage(w *Window) base.Message {
-	return base.Message{
-		Handler: base.ApplicationHandler(),
-		Type:    base.WmDestroy,
-		Value:   w,
 	}
 }
