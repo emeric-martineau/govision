@@ -20,14 +20,12 @@ import (
 
 	base "github.com/emeric-martineau/govision"
 	"github.com/emeric-martineau/govision/components"
-
 	"github.com/gdamore/tcell"
 )
 
 func main() {
 	appConfig := base.CreateDefaultApplicationConfig()
 	mainWindow := components.NewWindow("window1", appConfig)
-	mainWindow.SetEnabled(true)
 
 	application := base.NewApplication(&mainWindow, appConfig)
 
@@ -36,16 +34,29 @@ func main() {
 		os.Exit(1)
 	}
 
-	mainWindow.SetBackgroundColor(tcell.ColorYellow)
 	mainWindow.SetBounds(base.Rect{
 		X:      5,
 		Y:      8,
 		Height: 10,
-		Width:  13,
+		Width:  20,
 	})
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
-	mainWindow.BorderStyle = components.BorderStyleEmpty
+
+	window2 := components.NewWindow("window2", appConfig)
+
+	window2.SetBounds(base.Rect{
+		X:      0,
+		Y:      0,
+		Height: 20,
+		Width:  50,
+	})
+	window2.SetEnabled(true)
+	window2.SetVisible(true)
+	window2.SetParent(&mainWindow)
+	window2.SetBackgroundColor(tcell.ColorBlue)
+
+	mainWindow.AddChild(&window2)
 
 	application.Run()
 }

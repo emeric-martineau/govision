@@ -20,12 +20,12 @@ import (
 )
 
 const (
-	// BorderStyleSingle border with single line.
-	BorderStyleSingle = 0
-	// BorderStyleDouble border with double line.
-	BorderStyleDouble = 1
-	// BorderStyleEmpty border without line.
-	BorderStyleEmpty = 2
+	// BorderTypeSingle border with single line.
+	BorderTypeSingle = 0
+	// BorderTypeDouble border with double line.
+	BorderTypeDouble = 1
+	// BorderTypeEmpty border without line.
+	BorderTypeEmpty = 2
 
 	// Index for draw windows border.
 
@@ -53,15 +53,25 @@ const (
 
 var bordersChars [][]rune
 
-// BorderStyle border of window.
-type BorderStyle int
+// BorderType border of window.
+type BorderType int
+
+// WindowBorder is border style
+type WindowBorder struct {
+	// Border type.
+	Type BorderType
+	// Border color.
+	BackgroundColor tcell.Color
+	// Border color.
+	ForegroundColor tcell.Color
+}
 
 // Window is the base object of all widget.
 type Window struct {
 	// Window title.
 	Caption string
-	// Border style.
-	BorderStyle BorderStyle
+	// Border
+	Border WindowBorder
 
 	base.View
 }
@@ -69,53 +79,53 @@ type Window struct {
 func init() {
 	bordersChars = make([][]rune, 3)
 
-	borderStyleSingle := make([]rune, 10)
+	borderTypeSingle := make([]rune, 10)
 
-	borderStyleSingle[ULCorner] = tcell.RuneULCorner
-	borderStyleSingle[HLine] = tcell.RuneHLine
-	borderStyleSingle[CloseLeft] = '['
-	borderStyleSingle[CloseRight] = ']'
-	borderStyleSingle[Close] = '■'
-	borderStyleSingle[URCorner] = tcell.RuneURCorner
-	borderStyleSingle[CaptionSpace] = ' '
-	borderStyleSingle[LLCorner] = tcell.RuneLLCorner
-	borderStyleSingle[LRCorner] = tcell.RuneLRCorner
-	borderStyleSingle[VLine] = tcell.RuneVLine
+	borderTypeSingle[ULCorner] = tcell.RuneULCorner
+	borderTypeSingle[HLine] = tcell.RuneHLine
+	borderTypeSingle[CloseLeft] = '['
+	borderTypeSingle[CloseRight] = ']'
+	borderTypeSingle[Close] = '■'
+	borderTypeSingle[URCorner] = tcell.RuneURCorner
+	borderTypeSingle[CaptionSpace] = ' '
+	borderTypeSingle[LLCorner] = tcell.RuneLLCorner
+	borderTypeSingle[LRCorner] = tcell.RuneLRCorner
+	borderTypeSingle[VLine] = tcell.RuneVLine
 
-	borderStyleDouble := make([]rune, 10)
+	borderTypeDouble := make([]rune, 10)
 
-	borderStyleDouble[ULCorner] = '╔'
-	borderStyleDouble[HLine] = '═'
-	borderStyleDouble[CloseLeft] = '['
-	borderStyleDouble[CloseRight] = ']'
-	borderStyleDouble[Close] = '■'
-	borderStyleDouble[URCorner] = '╗'
-	borderStyleDouble[CaptionSpace] = ' '
-	borderStyleDouble[LLCorner] = '╚'
-	borderStyleDouble[LRCorner] = '╝'
-	borderStyleDouble[VLine] = '║'
+	borderTypeDouble[ULCorner] = '╔'
+	borderTypeDouble[HLine] = '═'
+	borderTypeDouble[CloseLeft] = '['
+	borderTypeDouble[CloseRight] = ']'
+	borderTypeDouble[Close] = '■'
+	borderTypeDouble[URCorner] = '╗'
+	borderTypeDouble[CaptionSpace] = ' '
+	borderTypeDouble[LLCorner] = '╚'
+	borderTypeDouble[LRCorner] = '╝'
+	borderTypeDouble[VLine] = '║'
 
-	borderStyleEmpty := make([]rune, 10)
+	borderTypeEmpty := make([]rune, 10)
 
-	borderStyleEmpty[ULCorner] = ' '
-	borderStyleEmpty[HLine] = ' '
-	borderStyleEmpty[CloseLeft] = '['
-	borderStyleEmpty[CloseRight] = ']'
-	borderStyleEmpty[Close] = '■'
-	borderStyleEmpty[URCorner] = ' '
-	borderStyleEmpty[CaptionSpace] = ' '
-	borderStyleEmpty[LLCorner] = ' '
-	borderStyleEmpty[LRCorner] = ' '
-	borderStyleEmpty[VLine] = ' '
+	borderTypeEmpty[ULCorner] = ' '
+	borderTypeEmpty[HLine] = ' '
+	borderTypeEmpty[CloseLeft] = '['
+	borderTypeEmpty[CloseRight] = ']'
+	borderTypeEmpty[Close] = '■'
+	borderTypeEmpty[URCorner] = ' '
+	borderTypeEmpty[CaptionSpace] = ' '
+	borderTypeEmpty[LLCorner] = ' '
+	borderTypeEmpty[LRCorner] = ' '
+	borderTypeEmpty[VLine] = ' '
 
-	bordersChars[BorderStyleSingle] = borderStyleSingle
-	bordersChars[BorderStyleDouble] = borderStyleDouble
-	bordersChars[BorderStyleEmpty] = borderStyleEmpty
+	bordersChars[BorderTypeSingle] = borderTypeSingle
+	bordersChars[BorderTypeDouble] = borderTypeDouble
+	bordersChars[BorderTypeEmpty] = borderTypeEmpty
 }
 
 // GetClientBounds return client bounds.
 func (w Window) GetClientBounds() base.Rect {
-	return calculateClientBounds(w.GetBounds(), w.BorderStyle)
+	return calculateClientBounds(w.GetBounds(), w.Border.Type)
 }
 
 // Draw the view.
@@ -130,28 +140,30 @@ func (w Window) Draw() {
 
 	// Get parent X and Y
 	absoluteBounds := base.CalculateAbsolutePosition(&w)
+	//base.PrintStringOnScreen(w.AppConfig().Screen, tcell.ColorBlack, tcell.ColorWhite, absoluteBounds.X-3, absoluteBounds.Y-3, fmt.Sprintf("%s: %+v", w.Name(), absoluteBounds))
 	// Get real zone whe can draw
 	drawBounds := base.CalculateDrawZone(&w)
+	//base.PrintStringOnScreen(w.AppConfig().Screen, tcell.ColorBlack, tcell.ColorWhite, absoluteBounds.X-2, absoluteBounds.Y-2, fmt.Sprintf("%s: %+v", w.Name(), drawBounds))
 	// Get client bould to draw
-	clientBounds := calculateClientBounds(absoluteBounds, w.BorderStyle)
+	clientBounds := calculateClientBounds(absoluteBounds, w.Border.Type)
+	clientBounds.X += absoluteBounds.X
+	clientBounds.Y += absoluteBounds.Y
+
+	//base.PrintStringOnScreen(w.AppConfig().Screen, tcell.ColorBlack, tcell.ColorWhite, absoluteBounds.X-1, absoluteBounds.Y-1, fmt.Sprintf("%s: %+v", w.Name(), clientBounds))
 
 	// Draw background of window
 	base.Fill(w.AppConfig().Screen, clientBounds, drawBounds, style)
 
-	borderStyle := tcell.StyleDefault.
-		Foreground(w.GetForegroundColor()).
-		Background(tcell.ColorBlue)
+	drawTitle(absoluteBounds, drawBounds, &w)
 
-	drawTitle(absoluteBounds, drawBounds, &w, borderStyle)
+	drawBottom(absoluteBounds, drawBounds, &w)
 
-	drawBottom(absoluteBounds, drawBounds, &w, borderStyle)
+	drawBorderLeft(absoluteBounds, drawBounds, &w)
 
-	drawBorderLeft(absoluteBounds, drawBounds, &w, borderStyle)
-
-	drawBorderRight(absoluteBounds, drawBounds, &w, borderStyle)
+	drawBorderRight(absoluteBounds, drawBounds, &w)
 }
 
-func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
 	titleBounds := base.Rect{
 		X:      absoluteBounds.X,
 		Y:      absoluteBounds.Y,
@@ -159,11 +171,15 @@ func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, border
 		Height: 1,
 	}
 
+	borderStyle := tcell.StyleDefault.
+		Foreground(w.Border.ForegroundColor).
+		Background(w.Border.BackgroundColor)
+
 	DefaultDrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
+		borderStyle, bordersChars[w.Border.Type])
 }
 
-func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
 	bottomBorderBounds := base.Rect{
 		X:      absoluteBounds.X,
 		Y:      absoluteBounds.Y + absoluteBounds.Height - 1,
@@ -171,11 +187,15 @@ func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borde
 		Height: 1,
 	}
 
+	borderStyle := tcell.StyleDefault.
+		Foreground(w.Border.ForegroundColor).
+		Background(w.Border.BackgroundColor)
+
 	DefaultDrawBottomBar(w.AppConfig().Screen, bottomBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
+		borderStyle, bordersChars[w.Border.Type])
 }
 
-func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
 	leftBorderBounds := base.Rect{
 		X:      absoluteBounds.X,
 		Y:      absoluteBounds.Y + 1,
@@ -183,11 +203,15 @@ func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, b
 		Height: absoluteBounds.Height - 2,
 	}
 
+	borderStyle := tcell.StyleDefault.
+		Foreground(w.Border.ForegroundColor).
+		Background(w.Border.BackgroundColor)
+
 	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
+		borderStyle, bordersChars[w.Border.Type])
 }
 
-func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, borderStyle tcell.Style) {
+func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
 	leftBorderBounds := base.Rect{
 		X:      absoluteBounds.X + absoluteBounds.Width - 1,
 		Y:      absoluteBounds.Y + 1,
@@ -195,8 +219,12 @@ func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window, 
 		Height: absoluteBounds.Height - 2,
 	}
 
+	borderStyle := tcell.StyleDefault.
+		Foreground(w.Border.ForegroundColor).
+		Background(w.Border.BackgroundColor)
+
 	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.BorderStyle])
+		borderStyle, bordersChars[w.Border.Type])
 }
 
 // Manage message if it's for me.
@@ -209,7 +237,10 @@ func (w Window) manageMyMessage(msg base.Message) {
 		} else {
 			w.Draw()
 			// Redraw children.
-			w.Component.HandleMessage(base.BuildDrawMessage(base.BroadcastHandler()))
+			for _, child := range w.Children() {
+				if child.HandleMessage(base.BuildDrawMessage(child.Handler())) {
+				}
+			}
 		}
 	case base.WmChangeBounds:
 		// Minimum Width/Height -> 2
@@ -233,17 +264,22 @@ func (w Window) HandleMessage(msg base.Message) bool {
 		return true
 	case base.BroadcastHandler():
 		w.manageMyMessage(msg)
+
+		// Redraw children.
+		for _, child := range w.Children() {
+			if child.HandleMessage(msg) {
+			}
+		}
 	}
 
-	// Because Component send message to child if broadcast or draw.
-	return w.Component.HandleMessage(base.BuildDrawMessage(base.BroadcastHandler()))
+	return false
 }
 
-func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect {
+func calculateClientBounds(bounds base.Rect, borderType BorderType) base.Rect {
 	/*
 		  TODO window type
-			switch borderStyle {
-			case BorderStyleNone:
+			switch borderType {
+			case BorderTypeNone:
 				// Remove titlebar
 				bounds.Y++
 				bounds.Height--
@@ -255,8 +291,8 @@ func calculateClientBounds(bounds base.Rect, borderStyle BorderStyle) base.Rect 
 				bounds.Width -= 2
 			}*/
 
-	bounds.Y++
-	bounds.X++
+	bounds.Y = 1
+	bounds.X = 1
 	bounds.Height -= 2
 	bounds.Width -= 2
 
@@ -268,7 +304,15 @@ func NewWindow(name string, config base.ApplicationConfig) Window {
 	w := Window{
 		View:    base.NewView(name, config),
 		Caption: name,
+		Border: WindowBorder{
+			Type:            BorderTypeSingle,
+			BackgroundColor: tcell.ColorGray,
+			ForegroundColor: tcell.ColorWhite,
+		},
 	}
+
+	w.SetBackgroundColor(tcell.ColorGray)
+	w.SetForegroundColor(tcell.ColorWhite)
 
 	return w
 }
@@ -302,7 +346,7 @@ func BuildDestroyWindowMessage(w *Window) base.Message {
 func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
 	indexTitleBar := 0
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[ULCorner], nil, style) // [1]
+	base.PrintChar(screen, titleBounds.X+indexTitleBar, titleBounds.Y, borders[ULCorner], style, drawBounds) // [1]
 	indexTitleBar++
 
 	const minimumTitleBar = 7
@@ -317,7 +361,7 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 		indexTitleBar++
 		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseLeft], nil, style) // [2]
 		indexTitleBar++
-		// TODO set color for close button
+		// TODO use a button
 		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[Close], nil, style) // [3]
 		indexTitleBar++
 		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseRight], nil, style) // [4]

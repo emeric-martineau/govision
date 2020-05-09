@@ -18,6 +18,15 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+// PrintChar print a character on screen only if in visible zone.
+func PrintChar(screen tcell.Screen, x int, y int, char rune, style tcell.Style, visibleZone Rect) {
+	if InHorizontal(x, visibleZone) && InVertical(y, visibleZone) {
+		screen.SetContent(x, y, char, nil, style)
+	}
+
+	screen.SetContent(x, y, char, nil, style)
+}
+
 // PrintStringOnScreen helper to print string. For Debug only.
 func PrintStringOnScreen(screen tcell.Screen, bc tcell.Color, fc tcell.Color, x int, y int, msg string) {
 	style := tcell.StyleDefault.
