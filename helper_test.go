@@ -139,6 +139,7 @@ func TestHelper_Intersect_Rectangle1_no_intersect_rectangle2(t *testing.T) {
 	}
 }
 
+/*
 // All components are visible.
 func TestHelper_All_component_are_visibles_CalculateAbsolutePosition(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
@@ -296,6 +297,7 @@ func TestHelper_with_only_on_component_CalculateAbsolutePosition4(t *testing.T) 
 		t.Errorf("Should be return %+v, return %+v", result, r)
 	}
 }
+*/
 
 func checkCell(screen tcell.Screen, x int, y int, c rune, st tcell.Style, t *testing.T) error {
 
@@ -306,7 +308,10 @@ func checkCell(screen tcell.Screen, x int, y int, c rune, st tcell.Style, t *tes
 	if mainc != c {
 		return fmt.Errorf("Incorrect cell content at (x: %d, y: %d). Want '%c': Found '%c'", x, y, c, mainc)
 	} else if style != st {
-		return fmt.Errorf("Incorrect style at (x: %d, y: %d). Want '%v': %v", x, y, st, style)
+		stFg, stBg, stAttr := st.Decompose()
+		styleFg, styleBg, styleAttr := style.Decompose()
+
+		return fmt.Errorf("Incorrect style at (x: %d, y: %d).\nForeground color want %v found %v\nBackground color want %v found %v\nAttributes want %v found %v", x, y, stFg, styleFg, stBg, styleBg, stAttr, styleAttr)
 	}
 
 	return nil

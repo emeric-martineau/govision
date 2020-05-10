@@ -43,7 +43,9 @@ func TestApplication_Exit_on_CtrlC(t *testing.T) {
 
 	mainWindow := NewComponent("window1", appConfig)
 
-	app := NewApplication(&mainWindow, appConfig)
+	app := NewApplication(appConfig)
+
+	app.AddWindow(&mainWindow)
 
 	if app.MainWindow() != &mainWindow {
 		t.Error("Error main window are different")
@@ -66,7 +68,9 @@ func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
 	mainWindow := NewComponent("window1", appConfig)
 	window1 := NewComponent("window2", appConfig)
 
-	app := NewApplication(&mainWindow, appConfig)
+	app := NewApplication(appConfig)
+
+	app.AddWindow(&mainWindow)
 
 	if app.MainWindow() != &mainWindow {
 		t.Error("Error main window are different")
@@ -104,7 +108,9 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 
 	mainWindow := NewComponent("window2", appConfig)
 
-	app := NewApplication(&mainWindow, appConfig)
+	app := NewApplication(appConfig)
+
+	app.AddWindow(&mainWindow)
 
 	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
 		if count := len(app.WindowsList()); count != 1 {
@@ -149,7 +155,9 @@ func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 		return false
 	}
 
-	app := NewApplication(&mainWindow, appConfig)
+	app := NewApplication(appConfig)
+
+	app.AddWindow(&mainWindow)
 
 	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
 

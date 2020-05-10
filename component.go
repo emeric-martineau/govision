@@ -196,6 +196,9 @@ func (c *Component) GetZorder() int {
 	return c.zorder
 }
 
+//------------------------------------------------------------------------------
+// Constrcutor.
+
 // NewComponent create new component.
 func NewComponent(name string, config ApplicationConfig) Component {
 	return Component{
