@@ -63,14 +63,18 @@ func (c *Canvas) CreateCanvasFrom(r Rect) TCanvas {
 
 // PrintChar print a charactere.
 func (c *Canvas) PrintChar(x int, y int, char rune) {
-	// TODO check if out of me.
-	c.parent.PrintCharWithBrush(x+c.offset.X, y+c.offset.Y, char, c.brush)
+	// Check if out of me.
+	if InHorizontal(x, c.draw) && InVertical(y, c.draw) {
+		c.parent.PrintCharWithBrush(x+c.offset.X, y+c.offset.Y, char, c.brush)
+	}
 }
 
 // PrintCharWithBrush print a charactere with brush.
 func (c *Canvas) PrintCharWithBrush(x int, y int, char rune, brush tcell.Style) {
-	// TODO check if out of me.
-	c.parent.PrintCharWithBrush(x+c.offset.X, y+c.offset.Y, char, brush)
+	// Check if out of me.
+	if InHorizontal(x, c.draw) && InVertical(y, c.draw) {
+		c.parent.PrintCharWithBrush(x+c.offset.X, y+c.offset.Y, char, brush)
+	}
 }
 
 // NewCanvas create a sub canvas.
