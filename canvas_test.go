@@ -29,6 +29,10 @@ func (c CanvasTest) SetBrush(b tcell.Style) {
 	c.brush = b
 }
 
+func (c *CanvasTest) UpdateBounds(r Rect) {
+
+}
+
 func (c CanvasTest) CreateCanvasFrom(r Rect) TCanvas {
 	return NewCanvas(&c, r)
 }

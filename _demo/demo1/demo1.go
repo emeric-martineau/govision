@@ -37,7 +37,6 @@ func timer2Gone(t *components.Timer) {
 
 	view2.SetZorder(v1)
 	view1.SetZorder(v2)
-
 	t.AppConfig().Message.Send(base.BuildZorderMessage(view1.GetParent().Handler()))
 }
 
@@ -50,8 +49,8 @@ func timer1Gone(t *components.Timer) {
 	base.PrintStringOnScreen(
 		t.AppConfig().Screen,
 		tcell.ColorBlack,
-		tcell.ColorWhite, 0, 0,
-		fmt.Sprintf("%+v", r))
+		tcell.ColorWhite, 50, 0,
+		fmt.Sprintf("%+v", view3.Canvas()))
 
 	t.AppConfig().Message.Send(base.BuildChangeBoundsMessage(view3.Handler(), r))
 }
@@ -62,17 +61,19 @@ func testOnDraw(v base.TView, s tcell.Screen) {
 
 func main() {
 	appConfig := base.CreateDefaultApplicationConfig()
-	rootComponent := base.NewComponent("rootComponent", appConfig)
+	application := base.NewApplication(appConfig)
+
+	rootComponent := base.NewView("rootComponent", appConfig, &application)
 	rootComponent.SetEnabled(true)
+	rootComponent.SetVisible(true)
+	rootComponent.SetBounds(base.Rect{
+		X:      0,
+		Y:      0,
+		Height: 50,
+		Width:  50,
+	})
 
-	application := base.NewApplication(&rootComponent, appConfig)
-
-	if e := application.Init(); e != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", e)
-		os.Exit(1)
-	}
-
-	view1 = base.NewView("view1", appConfig)
+	view1 = base.NewView("view1", appConfig, rootComponent.ClientCanvas())
 	view1.SetBounds(base.Rect{
 		X:      5,
 		Y:      8,
@@ -87,7 +88,7 @@ func main() {
 
 	rootComponent.AddChild(&view1)
 
-	view2 = base.NewView("view2", appConfig)
+	view2 = base.NewView("view2", appConfig, rootComponent.ClientCanvas())
 	view2.SetBounds(base.Rect{
 		X:      6,
 		Y:      2,
@@ -101,7 +102,7 @@ func main() {
 
 	rootComponent.AddChild(&view2)
 
-	view3 = base.NewView("view3", appConfig)
+	view3 = base.NewView("view3", appConfig, view2.ClientCanvas())
 	view3.SetBounds(base.Rect{
 		X:      -5,
 		Y:      -5,
@@ -115,7 +116,7 @@ func main() {
 
 	view2.AddChild(&view3)
 
-	view4 := base.NewView("view4", appConfig)
+	view4 := base.NewView("view4", appConfig, view3.ClientCanvas())
 	view4.SetBounds(base.Rect{
 		X:      1,
 		Y:      1,
@@ -130,14 +131,21 @@ func main() {
 	view3.AddChild(&view4)
 
 	timer1 = components.NewTimer("timer1", 1000*time.Millisecond, appConfig)
-	timer1.OnTimer = timer1Gone
 	rootComponent.AddChild(&timer1)
+	timer1.OnTimer = timer1Gone
 	timer1.SetEnabled(true)
 
 	timer2 = components.NewTimer("timer2", 500*time.Millisecond, appConfig)
-	timer2.OnTimer = timer2Gone
 	rootComponent.AddChild(&timer2)
+	timer2.OnTimer = timer2Gone
 	timer2.SetEnabled(true)
+
+	application.AddWindow(&rootComponent)
+
+	if e := application.Init(); e != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", e)
+		os.Exit(1)
+	}
 
 	application.Run()
 }

@@ -33,19 +33,19 @@ type Application struct {
 }
 
 // MainWindow return main windows.
-func (a Application) MainWindow() TComponent {
+func (a *Application) MainWindow() TComponent {
 	return a.mainWindow
 }
 
 // SetEncodingFallback changes the behavior of GetEncoding when a suitable
 // encoding is not found.  The default is EncodingFallbackFail, which
 // causes GetEncoding to simply return nil.
-func (a Application) SetEncodingFallback(fb tcell.EncodingFallback) {
+func (a *Application) SetEncodingFallback(fb tcell.EncodingFallback) {
 	tcell.SetEncodingFallback(fb)
 }
 
 // Init initialize screen (color, style...).
-func (a Application) Init() error {
+func (a *Application) Init() error {
 	style := a.config.ScreenStyle.Style.
 		Foreground(a.config.ScreenStyle.ForegroundColor).
 		Background(a.config.ScreenStyle.BackgroundColor)
@@ -60,7 +60,7 @@ func (a Application) Init() error {
 }
 
 // Run application and wait event.
-func (a Application) Run() {
+func (a *Application) Run() {
 	defer a.config.Screen.Fini()
 
 	a.config.Screen.Clear()
@@ -104,7 +104,7 @@ func (a Application) Run() {
 
 // WindowsList return the current windows list.
 // Becarefull, each call create a new array to return.
-func (a Application) WindowsList() []TComponent {
+func (a *Application) WindowsList() []TComponent {
 	wl := make([]TComponent, 0)
 
 	for e := a.windowsList.Front(); e != nil; e = e.Next() {
@@ -115,11 +115,51 @@ func (a Application) WindowsList() []TComponent {
 }
 
 // Config return application confguration.
-func (a Application) Config() ApplicationConfig {
+func (a *Application) Config() ApplicationConfig {
 	return a.config
 }
 
-func (a Application) manageMyMessage(msg Message) bool {
+// AddWindow add window to list. If first window, she become the main window.
+func (a *Application) AddWindow(w TComponent) {
+	a.windowsList.PushFront(w)
+
+	// TODO allow change main window
+	if a.mainWindow == nil {
+		a.mainWindow = w
+	}
+}
+
+//------------------------------------------------------------------------------
+// Internal Canvas
+
+// SetBrush set the brush to draw.
+func (a *Application) SetBrush(b tcell.Style) {
+	a.config.ScreenStyle.Style = b
+}
+
+// UpdateBounds call when component move or resize.
+func (a *Application) UpdateBounds(r Rect) {
+}
+
+// CreateCanvasFrom create a sub-canvas for `r` parameter.
+func (a *Application) CreateCanvasFrom(r Rect) TCanvas {
+	return NewCanvas(a, r)
+}
+
+// PrintChar print a charactere.
+func (a *Application) PrintChar(x int, y int, char rune) {
+	a.config.Screen.SetContent(x, y, char, nil, a.config.ScreenStyle.Style)
+}
+
+// PrintCharWithBrush print a charactere with brush.
+func (a *Application) PrintCharWithBrush(x int, y int, char rune, brush tcell.Style) {
+	a.config.Screen.SetContent(x, y, char, nil, brush)
+}
+
+//------------------------------------------------------------------------------
+// Internal function
+
+func (a *Application) manageMyMessage(msg Message) bool {
 	switch msg.Type {
 	case WmQuit:
 		return false
@@ -146,7 +186,7 @@ func (a Application) manageMyMessage(msg Message) bool {
 
 // Call focused windows if not nil.
 // Return false if need stop application.
-func (a Application) callFocusedWindowHandleMessage(msg Message) {
+func (a *Application) callFocusedWindowHandleMessage(msg Message) {
 	w := a.windowsList.Front()
 
 	w.Value.(TComponent).HandleMessage(msg)
@@ -171,16 +211,14 @@ func poolEvent(screen tcell.Screen, message Bus) {
 	}
 }
 
+//------------------------------------------------------------------------------
+// Constructor.
+
 // NewApplication create a text application.
-func NewApplication(mainWindow TComponent, config ApplicationConfig) Application {
-	wl := list.New()
-
-	wl.PushFront(mainWindow)
-
+func NewApplication(config ApplicationConfig) Application {
 	return Application{
-		mainWindow:  mainWindow,
 		ExitOnCtrlC: true,
-		windowsList: wl,
+		windowsList: list.New(),
 		config:      config,
 	}
 }

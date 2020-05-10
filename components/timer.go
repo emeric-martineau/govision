@@ -20,6 +20,9 @@ import (
 	base "github.com/emeric-martineau/govision"
 )
 
+const maxUint = ^uint(0)
+const maxInt = int(maxUint >> 1)
+
 // OnTimer is callback when timer is done.
 type OnTimer func(*Timer)
 
@@ -89,9 +92,13 @@ loop:
 
 // NewTimer create new timer.
 func NewTimer(name string, interval time.Duration, config base.ApplicationConfig) Timer {
-	return Timer{
+	t := Timer{
 		Component: base.NewComponent(name, config),
 		interval:  interval,
 		canceled:  make(chan bool),
 	}
+
+	t.SetZorder(maxInt)
+
+	return t
 }

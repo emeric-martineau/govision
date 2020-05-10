@@ -39,4 +39,8 @@ type TView interface {
 	SetForegroundColor(tcell.Color)
 	// Draw component
 	Draw()
+	// Canvas of view.
+	Canvas() TCanvas
+	// Client canvas of view.
+	ClientCanvas() TCanvas
 }

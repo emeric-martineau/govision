@@ -300,9 +300,9 @@ func calculateClientBounds(bounds base.Rect, borderType BorderType) base.Rect {
 }
 
 // NewWindow create new window.
-func NewWindow(name string, config base.ApplicationConfig) Window {
+func NewWindow(name string, config base.ApplicationConfig, parentCanvas base.TCanvas) Window {
 	w := Window{
-		View:    base.NewView(name, config),
+		View:    base.NewView(name, config, parentCanvas),
 		Caption: name,
 		Border: WindowBorder{
 			Type:            BorderTypeSingle,

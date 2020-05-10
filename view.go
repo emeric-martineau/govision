@@ -24,6 +24,7 @@ type OnDraw func(TView)
 // View is the base object of all visual widget.
 type View struct {
 	Component
+	canvas          TCanvas
 	bounds          Rect
 	focused         bool
 	visible         bool
@@ -36,6 +37,8 @@ type View struct {
 // SetBounds set view size.
 func (v *View) SetBounds(r Rect) {
 	v.bounds = r
+
+	v.canvas.UpdateBounds(r)
 }
 
 // GetBounds return view size.
@@ -99,27 +102,29 @@ func (v *View) Draw() {
 		return
 	}
 
-	style := tcell.StyleDefault.
+	v.canvas.SetBrush(tcell.StyleDefault.
 		Foreground(v.foregroundColor).
-		Background(v.backgroundColor)
+		Background(v.backgroundColor))
 
-	// Get parent X and Y
-	bounds := CalculateDrawZone(v)
-
-	// If component is more biggest than parent
-	startX := bounds.X
-	endX := bounds.X + bounds.Width
-
-	startY := bounds.Y
-	endY := bounds.Y + bounds.Height
-
-	for y := startY; y < endY; y++ {
-		for x := startX; x < endX; x++ {
-			v.AppConfig().Screen.
-				SetContent(x, y, ' ', nil, style)
+	for y := 0; y < v.bounds.Height; y++ {
+		for x := 0; x < v.bounds.Width; x++ {
+			v.canvas.PrintChar(x, y, ' ')
 		}
 	}
 }
+
+// Canvas of view.
+func (v *View) Canvas() TCanvas {
+	return v.canvas
+}
+
+// ClientCanvas return client canvas of view.
+func (v *View) ClientCanvas() TCanvas {
+	return v.canvas.CreateCanvasFrom(v.GetClientBounds())
+}
+
+//------------------------------------------------------------------------------
+// Internal function.
 
 // Manage message if it's for me.
 // Return true to stop message propagation.
@@ -134,9 +139,11 @@ func (v *View) manageMyMessage(msg Message) {
 			v.Component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
 		}
 	case WmChangeBounds:
-		v.bounds = msg.Value.(Rect)
+		v.SetBounds(msg.Value.(Rect))
 		// Redraw all components cause maybe overide a component with Zorder
 		v.AppConfig().Message.Send(BuildDrawMessage(BroadcastHandler()))
+	default:
+		v.Component.HandleMessage(msg)
 	}
 }
 
@@ -154,9 +161,13 @@ func (v *View) HandleMessage(msg Message) bool {
 	return v.Component.HandleMessage(msg)
 }
 
+//------------------------------------------------------------------------------
+// Constrcutor.
+
 // NewView create new timer.
-func NewView(name string, config ApplicationConfig) View {
+func NewView(name string, config ApplicationConfig, parentCanvas TCanvas) View {
 	return View{
 		Component: NewComponent(name, config),
+		canvas:    parentCanvas.CreateCanvasFrom(Rect{0, 0, 0, 0}),
 	}
 }

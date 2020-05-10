@@ -35,6 +35,18 @@ func (c *Canvas) SetBrush(b tcell.Style) {
 	c.brush = b
 }
 
+// UpdateBounds call when component move or resize.
+func (c *Canvas) UpdateBounds(r Rect) {
+	c.offset = r
+
+	c.draw = Rect{
+		X:      0,
+		Y:      0,
+		Width:  r.Width,
+		Height: r.Height,
+	}
+}
+
 // CreateCanvasFrom create a sub-canvas for `r` parameter.
 func (c *Canvas) CreateCanvasFrom(r Rect) TCanvas {
 	return &Canvas{
@@ -51,11 +63,13 @@ func (c *Canvas) CreateCanvasFrom(r Rect) TCanvas {
 
 // PrintChar print a charactere.
 func (c *Canvas) PrintChar(x int, y int, char rune) {
+	// TODO check if out of me.
 	c.parent.PrintCharWithBrush(x+c.offset.X, y+c.offset.Y, char, c.brush)
 }
 
 // PrintCharWithBrush print a charactere with brush.
 func (c *Canvas) PrintCharWithBrush(x int, y int, char rune, brush tcell.Style) {
+	// TODO check if out of me.
 	c.parent.PrintCharWithBrush(x+c.offset.X, y+c.offset.Y, char, brush)
 }
 

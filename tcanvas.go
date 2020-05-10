@@ -26,4 +26,6 @@ type TCanvas interface {
 	PrintChar(x int, y int, char rune)
 	// Print char with brush.
 	PrintCharWithBrush(x int, y int, char rune, brush tcell.Style)
+	// Update position.
+	UpdateBounds(r Rect)
 }
