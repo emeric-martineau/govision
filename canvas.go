@@ -77,6 +77,18 @@ func (c *Canvas) PrintCharWithBrush(x int, y int, char rune, brush tcell.Style) 
 	}
 }
 
+// Fill zone of canvas.
+func (c *Canvas) Fill(bounds Rect) {
+	for y := bounds.Y; y < bounds.Height; y++ {
+		for x := bounds.X; x < bounds.Width; x++ {
+			c.PrintChar(x, y, ' ')
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// Constrcutor.
+
 // NewCanvas create a sub canvas.
 func NewCanvas(parent TCanvas, r Rect) TCanvas {
 	return &Canvas{

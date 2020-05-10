@@ -156,6 +156,15 @@ func (a *Application) PrintCharWithBrush(x int, y int, char rune, brush tcell.St
 	a.config.Screen.SetContent(x, y, char, nil, brush)
 }
 
+// Fill fill canvas zone.
+func (a *Application) Fill(bounds Rect) {
+	for y := bounds.Y; y < bounds.Height; y++ {
+		for x := bounds.X; x < bounds.Width; x++ {
+			a.config.Screen.SetContent(x, y, ' ', nil, a.config.ScreenStyle.Style)
+		}
+	}
+}
+
 //------------------------------------------------------------------------------
 // Internal function
 

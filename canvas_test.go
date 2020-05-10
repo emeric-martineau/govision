@@ -45,6 +45,14 @@ func (c CanvasTest) PrintCharWithBrush(x int, y int, char rune, brush tcell.Styl
 	c.screen.SetContent(x, y, char, nil, brush)
 }
 
+func (c CanvasTest) Fill(bounds Rect) {
+	for y := bounds.Y; y < bounds.Height; y++ {
+		for x := bounds.X; x < bounds.Width; x++ {
+			c.PrintChar(x, y, ' ')
+		}
+	}
+}
+
 func TestCanvas_Create_sub_canvas(t *testing.T) {
 	rootCanvas := CanvasTest{
 		screen: tcell.NewSimulationScreen(""),

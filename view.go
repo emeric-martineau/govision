@@ -106,11 +106,11 @@ func (v *View) Draw() {
 		Foreground(v.foregroundColor).
 		Background(v.backgroundColor))
 
-	for y := 0; y < v.bounds.Height; y++ {
-		for x := 0; x < v.bounds.Width; x++ {
-			v.canvas.PrintChar(x, y, ' ')
-		}
-	}
+	bounds := v.GetBounds()
+	bounds.X = 0
+	bounds.Y = 0
+
+	v.canvas.Fill(bounds)
 }
 
 // Canvas of view.

@@ -134,40 +134,33 @@ func (w Window) Draw() {
 		return
 	}
 
-	style := tcell.StyleDefault.
+	canvas := w.Canvas()
+
+	canvas.SetBrush(tcell.StyleDefault.
 		Foreground(w.GetForegroundColor()).
-		Background(w.GetBackgroundColor())
-
-	// Get parent X and Y
-	absoluteBounds := base.CalculateAbsolutePosition(&w)
-	//base.PrintStringOnScreen(w.AppConfig().Screen, tcell.ColorBlack, tcell.ColorWhite, absoluteBounds.X-3, absoluteBounds.Y-3, fmt.Sprintf("%s: %+v", w.Name(), absoluteBounds))
-	// Get real zone whe can draw
-	drawBounds := base.CalculateDrawZone(&w)
-	//base.PrintStringOnScreen(w.AppConfig().Screen, tcell.ColorBlack, tcell.ColorWhite, absoluteBounds.X-2, absoluteBounds.Y-2, fmt.Sprintf("%s: %+v", w.Name(), drawBounds))
-	// Get client bould to draw
-	clientBounds := calculateClientBounds(absoluteBounds, w.Border.Type)
-	clientBounds.X += absoluteBounds.X
-	clientBounds.Y += absoluteBounds.Y
-
-	//base.PrintStringOnScreen(w.AppConfig().Screen, tcell.ColorBlack, tcell.ColorWhite, absoluteBounds.X-1, absoluteBounds.Y-1, fmt.Sprintf("%s: %+v", w.Name(), clientBounds))
+		Background(w.GetBackgroundColor()))
 
 	// Draw background of window
-	base.Fill(w.AppConfig().Screen, clientBounds, drawBounds, style)
+	bounds := w.GetBounds()
+	bounds.X = 0
+	bounds.Y = 0
 
-	drawTitle(absoluteBounds, drawBounds, &w)
+	canvas.Fill(bounds)
 
-	drawBottom(absoluteBounds, drawBounds, &w)
+	drawTitle(&w)
 
-	drawBorderLeft(absoluteBounds, drawBounds, &w)
+	drawBottom(&w)
 
-	drawBorderRight(absoluteBounds, drawBounds, &w)
+	drawBorderLeft(&w)
+
+	drawBorderRight(&w)
 }
 
-func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
+func drawTitle(canvas base.TCanvas, w *Window) {
 	titleBounds := base.Rect{
-		X:      absoluteBounds.X,
-		Y:      absoluteBounds.Y,
-		Width:  absoluteBounds.Width,
+		X:      0,
+		Y:      0,
+		Width:  w.GetBounds().Width,
 		Height: 1,
 	}
 
@@ -175,15 +168,18 @@ func drawTitle(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
 		Foreground(w.Border.ForegroundColor).
 		Background(w.Border.BackgroundColor)
 
-	DefaultDrawTitleBar(w.AppConfig().Screen, titleBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.Border.Type])
+	canvas.SetBrush(borderStyle)
+
+	DefaultDrawTitleBar(canvas, titleBounds, w.Caption, bordersChars[w.Border.Type])
 }
 
-func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
+func drawBottom(canvas base.TCanvas, w *Window) {
+	bounds := w.GetBounds()
+
 	bottomBorderBounds := base.Rect{
-		X:      absoluteBounds.X,
-		Y:      absoluteBounds.Y + absoluteBounds.Height - 1,
-		Width:  absoluteBounds.Width,
+		X:      0,
+		Y:      bounds.Height - 1,
+		Width:  bounds.Width,
 		Height: 1,
 	}
 
@@ -191,8 +187,9 @@ func drawBottom(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
 		Foreground(w.Border.ForegroundColor).
 		Background(w.Border.BackgroundColor)
 
-	DefaultDrawBottomBar(w.AppConfig().Screen, bottomBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.Border.Type])
+	canvas.SetBrush(borderStyle)
+
+	DefaultDrawBottomBar(canvas, bottomBorderBounds, bordersChars[w.Border.Type])
 }
 
 func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
@@ -343,10 +340,11 @@ func BuildDestroyWindowMessage(w *Window) base.Message {
 
 // DefaultDrawTitleBar default draw for title bar.
 // Give ┌─[■]─ My title ─┐
-func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
+func DefaultDrawTitleBar(canvas base.TCanvas, titleBounds base.Rect, caption string, borders []rune) {
 	indexTitleBar := 0
 
-	base.PrintChar(screen, titleBounds.X+indexTitleBar, titleBounds.Y, borders[ULCorner], style, drawBounds) // [1]
+	canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[ULCorner]) // [0]
+
 	indexTitleBar++
 
 	const minimumTitleBar = 7
@@ -357,14 +355,14 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 	if titleBounds.Width >= minimumTitleBar {
 		const minimumTitleBarWithCaption = minimumTitleBar + 2
 
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style) // [1]
+		canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine]) // [1]
 		indexTitleBar++
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseLeft], nil, style) // [2]
+		canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseLeft]) // [2]
 		indexTitleBar++
 		// TODO use a button
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[Close], nil, style) // [3]
+		canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[Close]) // [3]
 		indexTitleBar++
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseRight], nil, style) // [4]
+		canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CloseRight]) // [4]
 		indexTitleBar++
 
 		paddingLen := titleBounds.Width - len(caption) - 2
@@ -376,10 +374,10 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 			// Border before caption
 			// ──────── Hello
 			for ; indexTitleBar < paddingLenLeft; indexTitleBar++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
+				canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine])
 			}
 
-			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CaptionSpace], nil, style)
+			canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CaptionSpace])
 			indexTitleBar++
 
 			var c []rune
@@ -394,18 +392,18 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 
 			// Draw caption
 			for i := 0; i < len(c); i++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, c[i], nil, style)
+				canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, c[i])
 				indexTitleBar++
 			}
 
-			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CaptionSpace], nil, style)
+			canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[CaptionSpace])
 			indexTitleBar++
 
 			// Border after caption
 			// Hello ────
 			// -1 cause last char is corner
 			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
+				canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine])
 			}
 
 			// TODO add up/down button
@@ -413,35 +411,33 @@ func DefaultDrawTitleBar(screen tcell.Screen, titleBounds base.Rect, drawBounds 
 		} else {
 			// No space to draw caption
 			for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-				screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
+				canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine])
 			}
 		}
 	} else {
 		// No space to draw close button
 		for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-			screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
+			canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine])
 		}
 	}
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[URCorner], nil, style)
+	canvas.PrintChar(titleBounds.X+indexTitleBar, titleBounds.Y, borders[URCorner])
 }
 
 // DefaultDrawBottomBar draw bottom border of window.
 // Give └───────────┘
-func DefaultDrawBottomBar(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
+func DefaultDrawBottomBar(canvas base.Canvas, bottomBounds base.Rect, borders []rune) {
 	indexTitleBar := 0
 
-	// TODO if not fully visible
-
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[LLCorner], nil, style) // [0]
+	canvas.PrintChar(bottomBounds.X+indexTitleBar, bottomBounds.Y, borders[LLCorner]) // [0]
 	indexTitleBar++
 
 	// -1 cause last char is corner
-	for ; indexTitleBar < titleBounds.Width-1; indexTitleBar++ {
-		screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[HLine], nil, style)
+	for ; indexTitleBar < bottomBounds.Width-1; indexTitleBar++ {
+		canvas.PrintChar(bottomBounds.X+indexTitleBar, bottomBounds.Y, borders[HLine])
 	}
 
-	screen.SetContent(titleBounds.X+indexTitleBar, titleBounds.Y, borders[LRCorner], nil, style)
+	canvas.PrintChar(bottomBounds.X+indexTitleBar, bottomBounds.Y, borders[LRCorner])
 }
 
 // DefaultDrawLeftOrRightBorder draw left or right border of window.

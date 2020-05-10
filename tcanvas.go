@@ -28,4 +28,6 @@ type TCanvas interface {
 	PrintCharWithBrush(x int, y int, char rune, brush tcell.Style)
 	// Update position.
 	UpdateBounds(r Rect)
+	// Fill zone of canvas.
+	Fill(bounds Rect)
 }
