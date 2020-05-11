@@ -108,9 +108,9 @@ func TestView_draw_one_view_with_OnDraw(t *testing.T) {
 	}
 
 	c := NewView("You know my name", appConfig, &rootCanvas)
-	c.OnDraw = func(v TView) {
+	c.SetOnDraw(func(v TView) {
 		isCalled = true
-	}
+	})
 
 	c.SetBounds(Rect{
 		X:      1,

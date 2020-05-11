@@ -93,7 +93,9 @@ func TestTime_WmEnable(t *testing.T) {
 		Value:   &c1,
 	})
 
-	app := base.NewApplication(&c1, appConfig)
+	app := base.NewApplication(appConfig)
+
+	app.AddWindow(&c1)
 
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")

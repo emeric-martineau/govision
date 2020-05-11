@@ -254,6 +254,11 @@ func (w *Window) GetZorder() int {
 	return w.view.GetZorder()
 }
 
+// AppConfig return application config.
+func (w *Window) AppConfig() base.ApplicationConfig {
+	return w.view.AppConfig()
+}
+
 // Draw the view.
 func (w *Window) Draw() {
 	if !w.GetVisible() {

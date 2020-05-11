@@ -40,4 +40,6 @@ type TComponent interface {
 	// Odrer of draw.
 	SetZorder(int)
 	GetZorder() int
+	// Return application configuration.
+	AppConfig() ApplicationConfig
 }

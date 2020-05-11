@@ -16,6 +16,7 @@ package base
 
 import (
 	"github.com/gdamore/tcell"
+	"github.com/google/uuid"
 )
 
 // OnDraw is call when change enable.
@@ -23,7 +24,7 @@ type OnDraw func(TView)
 
 // View is the base object of all visual widget.
 type View struct {
-	Component
+	component       Component
 	canvas          TCanvas
 	bounds          Rect
 	focused         bool
@@ -32,6 +33,61 @@ type View struct {
 	foregroundColor tcell.Color
 	// To overide draw for custom draw for example.
 	onDraw OnDraw
+}
+
+// Name of component.
+func (v *View) Name() string {
+	return v.component.Name()
+}
+
+// Handler of component (UUID).
+func (v *View) Handler() uuid.UUID {
+	return v.component.Handler()
+}
+
+// SetEnabled enable component.
+func (v *View) SetEnabled(e bool) {
+	v.component.SetEnabled(e)
+}
+
+// GetEnabled return is component is enable.
+func (v *View) GetEnabled() bool {
+	return v.component.GetEnabled()
+}
+
+// SetParent set parent component.
+func (v *View) SetParent(p TComponent) {
+	v.component.SetParent(p)
+}
+
+// GetParent get parent component.
+func (v *View) GetParent() TComponent {
+	return v.component.GetParent()
+}
+
+// AddChild add a child to component.
+func (v *View) AddChild(c TComponent) {
+	v.component.AddChild(c)
+}
+
+// RemoveChild remove a child to component.
+func (v *View) RemoveChild(c TComponent) {
+	v.component.RemoveChild(c)
+}
+
+// Children return list of children of component.
+func (v *View) Children() []TComponent {
+	return v.component.Children()
+}
+
+// SetZorder set the new odrer of draw.
+func (v *View) SetZorder(o int) {
+	v.component.SetZorder(o)
+}
+
+// GetZorder return odrer of draw.
+func (v *View) GetZorder() int {
+	return v.component.GetZorder()
 }
 
 // SetOnDraw set ondraw callback.
@@ -106,6 +162,11 @@ func (v *View) SetForegroundColor(c tcell.Color) {
 	v.foregroundColor = c
 }
 
+// AppConfig return application config.
+func (v *View) AppConfig() ApplicationConfig {
+	return v.component.AppConfig()
+}
+
 // Draw the view.
 func (v *View) Draw() {
 	if !v.visible {
@@ -146,14 +207,14 @@ func (v *View) manageMyMessage(msg Message) {
 		} else {
 			v.Draw()
 			// Redraw children.
-			v.Component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
+			v.component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
 		}
 	case WmChangeBounds:
 		v.SetBounds(msg.Value.(Rect))
 		// Redraw all components cause maybe overide a component with Zorder
-		v.AppConfig().Message.Send(BuildDrawMessage(BroadcastHandler()))
+		v.component.AppConfig().Message.Send(BuildDrawMessage(BroadcastHandler()))
 	default:
-		v.Component.HandleMessage(msg)
+		v.component.HandleMessage(msg)
 	}
 }
 
@@ -168,7 +229,7 @@ func (v *View) HandleMessage(msg Message) bool {
 	}
 
 	// Because Component send message to child if broadcast or draw.
-	return v.Component.HandleMessage(msg)
+	return v.component.HandleMessage(msg)
 }
 
 //------------------------------------------------------------------------------
@@ -177,7 +238,7 @@ func (v *View) HandleMessage(msg Message) bool {
 // NewView create new timer.
 func NewView(name string, config ApplicationConfig, parentCanvas TCanvas) View {
 	return View{
-		Component: NewComponent(name, config),
+		component: NewComponent(name, config),
 		canvas:    parentCanvas.CreateCanvasFrom(Rect{0, 0, 0, 0}),
 	}
 }
