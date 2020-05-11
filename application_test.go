@@ -41,7 +41,7 @@ func CreateTestApplicationConfig() ApplicationConfig {
 func TestApplication_Exit_on_CtrlC(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window1", appConfig)
+	mainWindow := NewComponent("window1", appConfig.Message)
 
 	app := NewApplication(appConfig)
 
@@ -65,8 +65,8 @@ func TestApplication_Exit_on_CtrlC(t *testing.T) {
 func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window1", appConfig)
-	window1 := NewComponent("window2", appConfig)
+	mainWindow := NewComponent("window1", appConfig.Message)
+	window1 := NewComponent("window2", appConfig.Message)
 
 	app := NewApplication(appConfig)
 
@@ -106,7 +106,7 @@ func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
 func TestApplication_Exit_on_WmQuit(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window2", appConfig)
+	mainWindow := NewComponent("window2", appConfig.Message)
 
 	app := NewApplication(appConfig)
 
@@ -143,7 +143,7 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window3", appConfig)
+	mainWindow := NewComponent("window3", appConfig.Message)
 
 	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
 		appConfig.Message.Send(Message{

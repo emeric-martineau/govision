@@ -27,7 +27,7 @@ func main() {
 	appConfig := base.CreateDefaultApplicationConfig()
 	application := base.NewApplication(appConfig)
 
-	mainWindow := components.NewWindow("window1", appConfig, &application)
+	mainWindow := components.NewWindow("window1", appConfig.Message, &application)
 
 	application.AddWindow(&mainWindow)
 
@@ -40,7 +40,7 @@ func main() {
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 
-	window2 := components.NewWindow("window2", appConfig, mainWindow.ClientCanvas())
+	window2 := components.NewWindow("window2", appConfig.Message, mainWindow.ClientCanvas())
 
 	window2.SetBounds(base.Rect{
 		X:      0,

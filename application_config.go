@@ -24,9 +24,9 @@ import (
 // ApplicationConfig is configuration of application.
 type ApplicationConfig struct {
 	// Default style screen application.
-	ScreenStyle ApplicationStyle // TODO remove cause use canvas
+	ScreenStyle ApplicationStyle
 	// Screen of application.
-	Screen tcell.Screen // TODO remove cause use canvas
+	Screen tcell.Screen
 	// Message bus.
 	Message Bus
 }

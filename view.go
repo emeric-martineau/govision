@@ -162,9 +162,9 @@ func (v *View) SetForegroundColor(c tcell.Color) {
 	v.foregroundColor = c
 }
 
-// AppConfig return application config.
-func (v *View) AppConfig() ApplicationConfig {
-	return v.component.AppConfig()
+// GetMessageBus return application config.
+func (v *View) GetMessageBus() Bus {
+	return v.component.GetMessageBus()
 }
 
 // Draw the view.
@@ -212,7 +212,7 @@ func (v *View) manageMyMessage(msg Message) {
 	case WmChangeBounds:
 		v.SetBounds(msg.Value.(Rect))
 		// Redraw all components cause maybe overide a component with Zorder
-		v.component.AppConfig().Message.Send(BuildDrawMessage(BroadcastHandler()))
+		v.component.message.Send(BuildDrawMessage(BroadcastHandler()))
 	default:
 		v.component.HandleMessage(msg)
 	}
@@ -236,9 +236,9 @@ func (v *View) HandleMessage(msg Message) bool {
 // Constrcutor.
 
 // NewView create new timer.
-func NewView(name string, config ApplicationConfig, parentCanvas TCanvas) View {
+func NewView(name string, message Bus, parentCanvas TCanvas) View {
 	return View{
-		component: NewComponent(name, config),
+		component: NewComponent(name, message),
 		canvas:    parentCanvas.CreateCanvasFrom(Rect{0, 0, 0, 0}),
 	}
 }

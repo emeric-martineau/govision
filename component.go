@@ -47,7 +47,7 @@ type Component struct {
 	// Order to display.
 	zorder int
 	// Application configuration.
-	appConfig ApplicationConfig
+	message Bus
 }
 
 // Manage message if it's for me.
@@ -97,16 +97,16 @@ func (c *Component) HandleMessage(msg Message) bool {
 	return isStop
 }
 
-// AppConfig return application confguration.
-func (c *Component) AppConfig() ApplicationConfig {
-	return c.appConfig
+// GetMessageBus return application bus.
+func (c *Component) GetMessageBus() Bus {
+	return c.message
 }
 
 func (c *Component) reorderChildren() {
 	sort.Sort(ByZorder(c.children))
 
 	// Redraw me. Use message to refresh screen.
-	c.appConfig.Message.Send(BuildDrawMessage(c.Handler()))
+	c.message.Send(BuildDrawMessage(c.Handler()))
 }
 
 func (c *Component) drawChildren() {
@@ -200,10 +200,10 @@ func (c *Component) GetZorder() int {
 // Constrcutor.
 
 // NewComponent create new component.
-func NewComponent(name string, config ApplicationConfig) Component {
+func NewComponent(name string, message Bus) Component {
 	return Component{
-		name:      name,
-		handler:   uuid.New(),
-		appConfig: config,
+		name:    name,
+		handler: uuid.New(),
+		message: message,
 	}
 }

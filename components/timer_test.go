@@ -40,7 +40,7 @@ func CreateTestApplicationConfig() base.ApplicationConfig {
 }
 
 func TestTime_Codecoverage(t *testing.T) {
-	timer1 := NewTimer("timer1", 10*time.Millisecond, CreateTestApplicationConfig())
+	timer1 := NewTimer("timer1", 10*time.Millisecond, CreateTestApplicationConfig().Message)
 	timer1.GetIntervale()
 	timer1.SetEnabled(true)
 	timer1.SetEnabled(false)
@@ -49,7 +49,7 @@ func TestTime_Codecoverage(t *testing.T) {
 func TestTime_OnTimer(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	timer1 := NewTimer("timer1", 10*time.Millisecond, appConfig)
+	timer1 := NewTimer("timer1", 10*time.Millisecond, appConfig.Message)
 	timer1.OnTimer = func(t *Timer) {
 		appConfig.Message.Send(base.Message{})
 	}
@@ -69,7 +69,7 @@ func TestTime_WmEnable(t *testing.T) {
 	isCalled := false
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := base.NewComponent("c1", appConfig)
+	c1 := base.NewComponent("c1", appConfig.Message)
 	c1.OnReceiveMessage = func(c base.TComponent, m base.Message) bool {
 		switch m.Type {
 		case base.WmTimer:
@@ -83,7 +83,7 @@ func TestTime_WmEnable(t *testing.T) {
 		return false
 	}
 
-	timer1 := NewTimer("timer1", 0, appConfig)
+	timer1 := NewTimer("timer1", 0, appConfig.Message)
 	timer1.SetParent(&c1)
 
 	// AddChild is not necessary
@@ -114,7 +114,7 @@ func TestTime_WmEnable(t *testing.T) {
 func TestTime_SetInterval_if_enable(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	timer1 := NewTimer("timer1", 5*time.Millisecond, appConfig)
+	timer1 := NewTimer("timer1", 5*time.Millisecond, appConfig.Message)
 
 	OnTimer2 := func(t *Timer) {
 		appConfig.Message.Send(base.Message{})
@@ -141,7 +141,7 @@ func TestTime_SetInterval_if_enable(t *testing.T) {
 func TestTime_OnTimer_disable_timer(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	timer1 := NewTimer("timer1", 10*time.Millisecond, appConfig)
+	timer1 := NewTimer("timer1", 10*time.Millisecond, appConfig.Message)
 	timer1.OnTimer = func(t *Timer) {
 		t.SetEnabled(false)
 	}

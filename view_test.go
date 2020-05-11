@@ -30,7 +30,7 @@ func TestView_Dummy_for_code_coverage(t *testing.T) {
 			Background(tcell.ColorBlack),
 	}
 
-	c := NewView("You know my name", appConfig, &rootCanvas)
+	c := NewView("You know my name", appConfig.Message, &rootCanvas)
 	c.SetFocused(true)
 	c.GetFocused()
 	c.SetVisible(true)
@@ -62,7 +62,7 @@ func TestView_draw_one_view(t *testing.T) {
 		Foreground(tcell.ColorYellow).
 		Background(tcell.ColorBlue)
 
-	c := NewView("You know my name", appConfig, &rootCanvas)
+	c := NewView("You know my name", appConfig.Message, &rootCanvas)
 	c.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -107,7 +107,7 @@ func TestView_draw_one_view_with_OnDraw(t *testing.T) {
 			Background(tcell.ColorBlack),
 	}
 
-	c := NewView("You know my name", appConfig, &rootCanvas)
+	c := NewView("You know my name", appConfig.Message, &rootCanvas)
 	c.SetOnDraw(func(v TView) {
 		isCalled = true
 	})
@@ -202,7 +202,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 		Foreground(tcell.ColorBlue).
 		Background(tcell.ColorGreen)
 
-	c1 := NewView("MainComponent", appConfig, &rootCanvas)
+	c1 := NewView("MainComponent", appConfig.Message, &rootCanvas)
 	c1.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -213,7 +213,7 @@ func TestView_draw_one_view_in_another_view(t *testing.T) {
 	c1.SetBackgroundColor(tcell.ColorBlue)
 	c1.SetVisible(true)
 
-	c2 := NewView("ChildComponent", appConfig, c1.ClientCanvas())
+	c2 := NewView("ChildComponent", appConfig.Message, c1.ClientCanvas())
 	c2.SetBounds(Rect{
 		X:      2,
 		Y:      2,
@@ -343,7 +343,7 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 		Foreground(tcell.ColorBlue).
 		Background(tcell.ColorGreen)
 
-	c1 := NewView("MainComponent", appConfig, &rootCanvas)
+	c1 := NewView("MainComponent", appConfig.Message, &rootCanvas)
 	c1.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -354,7 +354,7 @@ func TestView_draw_one_view_in_another_view_partial_out(t *testing.T) {
 	c1.SetBackgroundColor(tcell.ColorBlue)
 	c1.SetVisible(true)
 
-	c2 := NewView("ChildComponent", appConfig, c1.ClientCanvas())
+	c2 := NewView("ChildComponent", appConfig.Message, c1.ClientCanvas())
 	c2.SetBounds(Rect{
 		X:      -2,
 		Y:      -2,
@@ -425,7 +425,7 @@ func TestView_draw_one_view_in_another_view_full_out(t *testing.T) {
 		Foreground(tcell.ColorYellow).
 		Background(tcell.ColorBlue)
 
-	c1 := NewView("MainComponent", appConfig, &rootCanvas)
+	c1 := NewView("MainComponent", appConfig.Message, &rootCanvas)
 	c1.SetBounds(Rect{
 		X:      1,
 		Y:      1,
@@ -436,7 +436,7 @@ func TestView_draw_one_view_in_another_view_full_out(t *testing.T) {
 	c1.SetBackgroundColor(tcell.ColorBlue)
 	c1.SetVisible(true)
 
-	c2 := NewView("ChildComponent", appConfig, &rootCanvas)
+	c2 := NewView("ChildComponent", appConfig.Message, &rootCanvas)
 	c2.SetBounds(Rect{
 		X:      -20,
 		Y:      -20,
@@ -485,7 +485,7 @@ func TestView_change_bound(t *testing.T) {
 			Background(tcell.ColorBlack),
 	}
 
-	c := NewView("You know my name", appConfig, &rootCanvas)
+	c := NewView("You know my name", appConfig.Message, &rootCanvas)
 	c.SetBounds(Rect{
 		X:      1,
 		Y:      1,

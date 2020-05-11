@@ -20,7 +20,7 @@ import "testing"
 func TestComponent_Dummy_for_code_coverage(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c := NewComponent("You know my name", appConfig)
+	c := NewComponent("You know my name", appConfig.Message)
 	c.Name()
 	c.Handler()
 	c.GetEnabled()
@@ -32,7 +32,7 @@ func TestComponent_Dummy_for_code_coverage(t *testing.T) {
 func TestComponent_Enable_without_OnEnabled(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c := NewComponent("You know my name", appConfig)
+	c := NewComponent("You know my name", appConfig.Message)
 	c.SetEnabled(true) // By default it's false
 
 	if c.GetEnabled() != true {
@@ -43,7 +43,7 @@ func TestComponent_Enable_without_OnEnabled(t *testing.T) {
 func TestComponent_Enable_with_OnEnabled(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c := NewComponent("You know my name", appConfig)
+	c := NewComponent("You know my name", appConfig.Message)
 	c.OnEnabled = func(c TComponent, status bool) bool {
 		return false
 	}
@@ -58,8 +58,8 @@ func TestComponent_Enable_with_OnEnabled(t *testing.T) {
 func TestComponent_AddChild(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := NewComponent("c1", appConfig)
-	c2 := NewComponent("c2", appConfig)
+	c1 := NewComponent("c1", appConfig.Message)
+	c2 := NewComponent("c2", appConfig.Message)
 
 	c2.AddChild(&c1)
 
@@ -77,10 +77,10 @@ func TestComponent_AddChild(t *testing.T) {
 func TestComponent_RemoveChild(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := NewComponent("c1", appConfig)
-	c2 := NewComponent("c2", appConfig)
-	c3 := NewComponent("c3", appConfig)
-	c4 := NewComponent("c4", appConfig)
+	c1 := NewComponent("c1", appConfig.Message)
+	c2 := NewComponent("c2", appConfig.Message)
+	c3 := NewComponent("c3", appConfig.Message)
+	c4 := NewComponent("c4", appConfig.Message)
 
 	c2.AddChild(&c1)
 	c2.AddChild(&c3)
@@ -106,10 +106,10 @@ func TestComponent_RemoveChild(t *testing.T) {
 func TestComponent_RemoveChild_not_found_component(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := NewComponent("c1", appConfig)
-	c2 := NewComponent("c2", appConfig)
-	c3 := NewComponent("c3", appConfig)
-	c4 := NewComponent("c4", appConfig)
+	c1 := NewComponent("c1", appConfig.Message)
+	c2 := NewComponent("c2", appConfig.Message)
+	c3 := NewComponent("c3", appConfig.Message)
+	c4 := NewComponent("c4", appConfig.Message)
 
 	c2.AddChild(&c1)
 	//c2.AddChild(&c3)
@@ -137,8 +137,8 @@ func TestComponent_Message_draw_send_to_a_child(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
 	// Use OnReceiveMessage on child
-	c1 := NewComponent("c1", appConfig)
-	c2 := NewComponent("c2", appConfig)
+	c1 := NewComponent("c1", appConfig.Message)
+	c2 := NewComponent("c2", appConfig.Message)
 
 	c1.AddChild(&c2)
 
@@ -172,8 +172,8 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 	isCalledChild := false
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := NewComponent("c1", appConfig)
-	c2 := NewComponent("c2", appConfig)
+	c1 := NewComponent("c1", appConfig.Message)
+	c2 := NewComponent("c2", appConfig.Message)
 
 	c1.AddChild(&c2)
 
@@ -222,7 +222,7 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 func TestComponent_Message_enable(t *testing.T) {
 	// Use OnReceiveMessage on main component
 	appConfig := CreateTestApplicationConfig()
-	c1 := NewComponent("c1", appConfig)
+	c1 := NewComponent("c1", appConfig.Message)
 	c1.SetEnabled(true) // By default it's false
 
 	c1.OnEnabled = func(c TComponent, status bool) bool {
@@ -246,13 +246,13 @@ func TestComponent_Message_enable(t *testing.T) {
 
 func TestComponent_Message_zorder(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
-	c := NewComponent("main", appConfig)
+	c := NewComponent("main", appConfig.Message)
 
-	c1 := NewComponent("1", appConfig)
+	c1 := NewComponent("1", appConfig.Message)
 	c1.SetZorder(2)
-	c2 := NewComponent("2", appConfig)
+	c2 := NewComponent("2", appConfig.Message)
 	c2.SetZorder(1)
-	c3 := NewComponent("3", appConfig)
+	c3 := NewComponent("3", appConfig.Message)
 	c3.SetZorder(3)
 
 	c.AddChild(&c1)

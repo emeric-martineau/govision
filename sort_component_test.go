@@ -29,11 +29,11 @@ func compare(c, r TComponent, t *testing.T) {
 func TestSortComponent_ByZorder(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := NewComponent("1", appConfig)
+	c1 := NewComponent("1", appConfig.Message)
 	c1.SetZorder(2)
-	c2 := NewComponent("2", appConfig)
+	c2 := NewComponent("2", appConfig.Message)
 	c2.SetZorder(1)
-	c3 := NewComponent("3", appConfig)
+	c3 := NewComponent("3", appConfig.Message)
 	c3.SetZorder(3)
 
 	var children []TComponent

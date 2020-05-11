@@ -30,6 +30,7 @@ var timer2 components.Timer
 var view1 base.View
 var view2 base.View
 var view3 base.View
+var appConfig base.ApplicationConfig
 
 func timer2Gone(t *components.Timer) {
 	v1 := view1.GetZorder()
@@ -37,7 +38,7 @@ func timer2Gone(t *components.Timer) {
 
 	view2.SetZorder(v1)
 	view1.SetZorder(v2)
-	t.AppConfig().Message.Send(base.BuildZorderMessage(view1.GetParent().Handler()))
+	t.GetMessageBus().Send(base.BuildZorderMessage(view1.GetParent().Handler()))
 }
 
 func timer1Gone(t *components.Timer) {
@@ -47,12 +48,12 @@ func timer1Gone(t *components.Timer) {
 	r.X++
 
 	base.PrintStringOnScreen(
-		t.AppConfig().Screen,
+		appConfig.Screen,
 		tcell.ColorBlack,
 		tcell.ColorWhite, 50, 0,
 		fmt.Sprintf("%+v", view3.Canvas()))
 
-	t.AppConfig().Message.Send(base.BuildChangeBoundsMessage(view3.Handler(), r))
+	t.GetMessageBus().Send(base.BuildChangeBoundsMessage(view3.Handler(), r))
 }
 
 func testOnDraw(v base.TView, s tcell.Screen) {
@@ -60,10 +61,10 @@ func testOnDraw(v base.TView, s tcell.Screen) {
 }
 
 func main() {
-	appConfig := base.CreateDefaultApplicationConfig()
+	appConfig = base.CreateDefaultApplicationConfig()
 	application := base.NewApplication(appConfig)
 
-	rootComponent := base.NewView("rootComponent", appConfig, &application)
+	rootComponent := base.NewView("rootComponent", appConfig.Message, &application)
 	rootComponent.SetEnabled(true)
 	rootComponent.SetVisible(true)
 	rootComponent.SetBounds(base.Rect{
@@ -73,7 +74,7 @@ func main() {
 		Width:  50,
 	})
 
-	view1 = base.NewView("view1", appConfig, rootComponent.ClientCanvas())
+	view1 = base.NewView("view1", appConfig.Message, rootComponent.ClientCanvas())
 	view1.SetBounds(base.Rect{
 		X:      5,
 		Y:      8,
@@ -88,7 +89,7 @@ func main() {
 
 	rootComponent.AddChild(&view1)
 
-	view2 = base.NewView("view2", appConfig, rootComponent.ClientCanvas())
+	view2 = base.NewView("view2", appConfig.Message, rootComponent.ClientCanvas())
 	view2.SetBounds(base.Rect{
 		X:      6,
 		Y:      2,
@@ -102,7 +103,7 @@ func main() {
 
 	rootComponent.AddChild(&view2)
 
-	view3 = base.NewView("view3", appConfig, view2.ClientCanvas())
+	view3 = base.NewView("view3", appConfig.Message, view2.ClientCanvas())
 	view3.SetBounds(base.Rect{
 		X:      -5,
 		Y:      -5,
@@ -116,7 +117,7 @@ func main() {
 
 	view2.AddChild(&view3)
 
-	view4 := base.NewView("view4", appConfig, view3.ClientCanvas())
+	view4 := base.NewView("view4", appConfig.Message, view3.ClientCanvas())
 	view4.SetBounds(base.Rect{
 		X:      1,
 		Y:      1,
@@ -130,12 +131,12 @@ func main() {
 
 	view3.AddChild(&view4)
 
-	timer1 = components.NewTimer("timer1", 1000*time.Millisecond, appConfig)
+	timer1 = components.NewTimer("timer1", 1000*time.Millisecond, appConfig.Message)
 	rootComponent.AddChild(&timer1)
 	timer1.OnTimer = timer1Gone
 	timer1.SetEnabled(true)
 
-	timer2 = components.NewTimer("timer2", 500*time.Millisecond, appConfig)
+	timer2 = components.NewTimer("timer2", 500*time.Millisecond, appConfig.Message)
 	rootComponent.AddChild(&timer2)
 	timer2.OnTimer = timer2Gone
 	timer2.SetEnabled(true)

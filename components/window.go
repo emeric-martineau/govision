@@ -254,9 +254,9 @@ func (w *Window) GetZorder() int {
 	return w.view.GetZorder()
 }
 
-// AppConfig return application config.
-func (w *Window) AppConfig() base.ApplicationConfig {
-	return w.view.AppConfig()
+// GetMessageBus return application bus.
+func (w *Window) GetMessageBus() base.Bus {
+	return w.view.GetMessageBus()
 }
 
 // Draw the view.
@@ -386,7 +386,7 @@ func (w *Window) manageMyMessage(msg base.Message) {
 
 		w.SetBounds(bounds)
 		// Redraw all components cause maybe overide a component with Zorder
-		w.view.AppConfig().Message.Send(base.BuildDrawMessage(base.BroadcastHandler()))
+		w.view.GetMessageBus().Send(base.BuildDrawMessage(base.BroadcastHandler()))
 	}
 }
 
@@ -435,9 +435,9 @@ func calculateClientBounds(bounds base.Rect, borderType BorderType) base.Rect {
 }
 
 // NewWindow create new window.
-func NewWindow(name string, config base.ApplicationConfig, parentCanvas base.TCanvas) Window {
+func NewWindow(name string, message base.Bus, parentCanvas base.TCanvas) Window {
 	w := Window{
-		view:    base.NewView(name, config, parentCanvas),
+		view:    base.NewView(name, message, parentCanvas),
 		Caption: name,
 		Border: WindowBorder{
 			Type:            BorderTypeSingle,

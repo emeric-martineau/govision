@@ -72,7 +72,7 @@ loop:
 		case <-timer.C:
 			if t.OnTimer == nil {
 				if t.GetParent() != nil {
-					t.AppConfig().Message.Send(base.Message{
+					t.GetMessageBus().Send(base.Message{
 						Handler: t.GetParent().Handler(),
 						Type:    base.WmTimer,
 					})
@@ -91,9 +91,9 @@ loop:
 }
 
 // NewTimer create new timer.
-func NewTimer(name string, interval time.Duration, config base.ApplicationConfig) Timer {
+func NewTimer(name string, interval time.Duration, message base.Bus) Timer {
 	t := Timer{
-		Component: base.NewComponent(name, config),
+		Component: base.NewComponent(name, message),
 		interval:  interval,
 		canceled:  make(chan bool),
 	}

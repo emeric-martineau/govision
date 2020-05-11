@@ -41,5 +41,5 @@ type TComponent interface {
 	SetZorder(int)
 	GetZorder() int
 	// Return application configuration.
-	AppConfig() ApplicationConfig
+	GetMessageBus() Bus
 }
