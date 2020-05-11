@@ -132,6 +132,8 @@ func (a *Application) AddWindow(w TComponent) {
 //------------------------------------------------------------------------------
 // Internal Canvas
 
+// TODO is too strange to use application for canvas. Add method Canvas()
+
 // SetBrush set the brush to draw.
 func (a *Application) SetBrush(b tcell.Style) {
 	a.config.ScreenStyle.Style = b

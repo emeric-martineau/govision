@@ -31,7 +31,17 @@ type View struct {
 	backgroundColor tcell.Color
 	foregroundColor tcell.Color
 	// To overide draw for custom draw for example.
-	OnDraw OnDraw
+	onDraw OnDraw
+}
+
+// SetOnDraw set ondraw callback.
+func (v *View) SetOnDraw(f OnDraw) {
+	v.onDraw = f
+}
+
+// GetOnDraw get ondraw callback.
+func (v *View) GetOnDraw() OnDraw {
+	return v.onDraw
 }
 
 // SetBounds set view size.
@@ -131,8 +141,8 @@ func (v *View) ClientCanvas() TCanvas {
 func (v *View) manageMyMessage(msg Message) {
 	switch msg.Type {
 	case WmDraw:
-		if v.OnDraw != nil {
-			v.OnDraw(v)
+		if v.onDraw != nil {
+			v.onDraw(v)
 		} else {
 			v.Draw()
 			// Redraw children.

@@ -17,6 +17,7 @@ package components
 import (
 	base "github.com/emeric-martineau/govision"
 	"github.com/gdamore/tcell"
+	"github.com/google/uuid"
 )
 
 const (
@@ -73,7 +74,7 @@ type Window struct {
 	// Border
 	Border WindowBorder
 
-	base.View
+	view base.View
 }
 
 func init() {
@@ -123,13 +124,138 @@ func init() {
 	bordersChars[BorderTypeEmpty] = borderTypeEmpty
 }
 
+// SetOnDraw set ondraw callback.
+func (w *Window) SetOnDraw(f base.OnDraw) {
+	w.view.SetOnDraw(f)
+}
+
+// GetOnDraw get ondraw callback.
+func (w *Window) GetOnDraw() base.OnDraw {
+	return w.view.GetOnDraw()
+}
+
+// SetBounds set view size.
+func (w *Window) SetBounds(r base.Rect) {
+	w.view.SetBounds(r)
+}
+
+// GetBounds return view size.
+func (w *Window) GetBounds() base.Rect {
+	return w.view.GetBounds()
+}
+
+// SetFocused of component.
+func (w *Window) SetFocused(f bool) {
+	w.view.SetFocused(f)
+}
+
+// GetFocused return true if component has focus.
+func (w *Window) GetFocused() bool {
+	return w.view.GetFocused()
+}
+
+// SetVisible if component is visible.
+func (w *Window) SetVisible(s bool) {
+	w.view.SetVisible(s)
+}
+
+// GetVisible if component is visible.
+func (w *Window) GetVisible() bool {
+	return w.view.GetVisible()
+}
+
+// GetBackgroundColor return background color.
+func (w *Window) GetBackgroundColor() tcell.Color {
+	return w.view.GetBackgroundColor()
+}
+
+// SetBackgroundColor change background color.
+func (w *Window) SetBackgroundColor(c tcell.Color) {
+	w.view.SetBackgroundColor(c)
+}
+
+// GetForegroundColor return text color.
+func (w *Window) GetForegroundColor() tcell.Color {
+	return w.view.GetForegroundColor()
+}
+
+// SetForegroundColor change text color.
+func (w *Window) SetForegroundColor(c tcell.Color) {
+	w.view.SetForegroundColor(c)
+}
+
+// Canvas of view.
+func (w *Window) Canvas() base.TCanvas {
+	return w.view.Canvas()
+}
+
+// ClientCanvas return client canvas of view.
+func (w *Window) ClientCanvas() base.TCanvas {
+	return w.view.Canvas().CreateCanvasFrom(w.GetClientBounds())
+}
+
 // GetClientBounds return client bounds.
-func (w Window) GetClientBounds() base.Rect {
+func (w *Window) GetClientBounds() base.Rect {
 	return calculateClientBounds(w.GetBounds(), w.Border.Type)
 }
 
+// Name of component.
+func (w *Window) Name() string {
+	return w.view.Name()
+}
+
+// Handler of component (UUID).
+func (w *Window) Handler() uuid.UUID {
+	return w.view.Handler()
+}
+
+// SetEnabled enable component.
+func (w *Window) SetEnabled(e bool) {
+	w.view.SetEnabled(e)
+}
+
+// GetEnabled return is component is enable.
+func (w *Window) GetEnabled() bool {
+	return w.view.GetEnabled()
+}
+
+// SetParent set parent component.
+func (w *Window) SetParent(p base.TComponent) {
+	w.view.SetParent(p)
+}
+
+// GetParent get parent component.
+func (w *Window) GetParent() base.TComponent {
+	return w.view.GetParent()
+}
+
+// AddChild add a child to component.
+func (w *Window) AddChild(c base.TComponent) {
+	w.view.AddChild(c)
+}
+
+// RemoveChild remove a child to component.
+func (w *Window) RemoveChild(c base.TComponent) {
+	w.view.RemoveChild(c)
+}
+
+// Children return list of children of component.
+func (w *Window) Children() []base.TComponent {
+	return w.view.Children()
+}
+
+// SetZorder set the new odrer of draw.
+func (w *Window) SetZorder(o int) {
+	w.view.SetZorder(o)
+}
+
+// GetZorder return odrer of draw.
+func (w *Window) GetZorder() int {
+	return w.view.GetZorder()
+}
+
 // Draw the view.
-func (w Window) Draw() {
+func (w *Window) Draw() {
 	if !w.GetVisible() {
 		return
 	}
@@ -147,13 +273,13 @@ func (w Window) Draw() {
 
 	canvas.Fill(bounds)
 
-	drawTitle(&w)
+	drawTitle(canvas, w)
 
-	drawBottom(&w)
+	drawBottom(canvas, w)
 
-	drawBorderLeft(&w)
+	drawBorderLeft(canvas, w)
 
-	drawBorderRight(&w)
+	drawBorderRight(canvas, w)
 }
 
 func drawTitle(canvas base.TCanvas, w *Window) {
@@ -192,45 +318,52 @@ func drawBottom(canvas base.TCanvas, w *Window) {
 	DefaultDrawBottomBar(canvas, bottomBorderBounds, bordersChars[w.Border.Type])
 }
 
-func drawBorderLeft(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
+func drawBorderLeft(canvas base.TCanvas, w *Window) {
+	bounds := w.GetBounds()
+
 	leftBorderBounds := base.Rect{
-		X:      absoluteBounds.X,
-		Y:      absoluteBounds.Y + 1,
+		X:      0,
+		Y:      1,
 		Width:  1,
-		Height: absoluteBounds.Height - 2,
+		Height: bounds.Height - 2,
 	}
 
 	borderStyle := tcell.StyleDefault.
 		Foreground(w.Border.ForegroundColor).
 		Background(w.Border.BackgroundColor)
 
-	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.Border.Type])
+	canvas.SetBrush(borderStyle)
+
+	DefaultDrawLeftOrRightBorder(canvas, leftBorderBounds, bordersChars[w.Border.Type])
 }
 
-func drawBorderRight(absoluteBounds base.Rect, drawBounds base.Rect, w *Window) {
-	leftBorderBounds := base.Rect{
-		X:      absoluteBounds.X + absoluteBounds.Width - 1,
-		Y:      absoluteBounds.Y + 1,
+func drawBorderRight(canvas base.TCanvas, w *Window) {
+	bounds := w.GetBounds()
+
+	rightBorderBounds := base.Rect{
+		X:      bounds.Width - 1,
+		Y:      1,
 		Width:  1,
-		Height: absoluteBounds.Height - 2,
+		Height: bounds.Height - 2,
 	}
 
 	borderStyle := tcell.StyleDefault.
 		Foreground(w.Border.ForegroundColor).
 		Background(w.Border.BackgroundColor)
 
-	DefaultDrawLeftOrRightBorder(w.AppConfig().Screen, leftBorderBounds, drawBounds, w.Caption,
-		borderStyle, bordersChars[w.Border.Type])
+	canvas.SetBrush(borderStyle)
+
+	DefaultDrawLeftOrRightBorder(canvas, rightBorderBounds, bordersChars[w.Border.Type])
 }
 
 // Manage message if it's for me.
 // Return true to stop message propagation.
-func (w Window) manageMyMessage(msg base.Message) {
+func (w *Window) manageMyMessage(msg base.Message) {
 	switch msg.Type {
 	case base.WmDraw:
-		if w.OnDraw != nil {
-			w.OnDraw(&w)
+
+		if w.GetOnDraw() != nil {
+			w.GetOnDraw()(w)
 		} else {
 			w.Draw()
 			// Redraw children.
@@ -248,12 +381,12 @@ func (w Window) manageMyMessage(msg base.Message) {
 
 		w.SetBounds(bounds)
 		// Redraw all components cause maybe overide a component with Zorder
-		w.AppConfig().Message.Send(base.BuildDrawMessage(base.BroadcastHandler()))
+		w.view.AppConfig().Message.Send(base.BuildDrawMessage(base.BroadcastHandler()))
 	}
 }
 
 // HandleMessage is use to manage message.
-func (w Window) HandleMessage(msg base.Message) bool {
+func (w *Window) HandleMessage(msg base.Message) bool {
 
 	switch msg.Handler {
 	case w.Handler():
@@ -299,7 +432,7 @@ func calculateClientBounds(bounds base.Rect, borderType BorderType) base.Rect {
 // NewWindow create new window.
 func NewWindow(name string, config base.ApplicationConfig, parentCanvas base.TCanvas) Window {
 	w := Window{
-		View:    base.NewView(name, config, parentCanvas),
+		view:    base.NewView(name, config, parentCanvas),
 		Caption: name,
 		Border: WindowBorder{
 			Type:            BorderTypeSingle,
@@ -426,7 +559,7 @@ func DefaultDrawTitleBar(canvas base.TCanvas, titleBounds base.Rect, caption str
 
 // DefaultDrawBottomBar draw bottom border of window.
 // Give └───────────┘
-func DefaultDrawBottomBar(canvas base.Canvas, bottomBounds base.Rect, borders []rune) {
+func DefaultDrawBottomBar(canvas base.TCanvas, bottomBounds base.Rect, borders []rune) {
 	indexTitleBar := 0
 
 	canvas.PrintChar(bottomBounds.X+indexTitleBar, bottomBounds.Y, borders[LLCorner]) // [0]
@@ -441,10 +574,8 @@ func DefaultDrawBottomBar(canvas base.Canvas, bottomBounds base.Rect, borders []
 }
 
 // DefaultDrawLeftOrRightBorder draw left or right border of window.
-func DefaultDrawLeftOrRightBorder(screen tcell.Screen, titleBounds base.Rect, drawBounds base.Rect, caption string, style tcell.Style, borders []rune) {
-	titleBarLen := titleBounds.Height
-
-	for indexTitleBar := 0; indexTitleBar < titleBarLen; indexTitleBar++ {
-		screen.SetContent(titleBounds.X, titleBounds.Y+indexTitleBar, borders[VLine], nil, style)
+func DefaultDrawLeftOrRightBorder(canvas base.TCanvas, bounds base.Rect, borders []rune) {
+	for indexTitleBar := 0; indexTitleBar < bounds.Height; indexTitleBar++ {
+		canvas.PrintChar(bounds.X, bounds.Y+indexTitleBar, borders[VLine])
 	}
 }

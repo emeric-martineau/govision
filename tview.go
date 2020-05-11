@@ -43,4 +43,6 @@ type TView interface {
 	Canvas() TCanvas
 	// Client canvas of view.
 	ClientCanvas() TCanvas
+	SetOnDraw(OnDraw)
+	GetOnDraw() OnDraw
 }

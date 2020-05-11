@@ -25,14 +25,11 @@ import (
 
 func main() {
 	appConfig := base.CreateDefaultApplicationConfig()
-	mainWindow := components.NewWindow("window1", appConfig)
+	application := base.NewApplication(appConfig)
 
-	application := base.NewApplication(&mainWindow, appConfig)
+	mainWindow := components.NewWindow("window1", appConfig, &application)
 
-	if e := application.Init(); e != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", e)
-		os.Exit(1)
-	}
+	application.AddWindow(&mainWindow)
 
 	mainWindow.SetBounds(base.Rect{
 		X:      5,
@@ -43,7 +40,7 @@ func main() {
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 
-	window2 := components.NewWindow("window2", appConfig)
+	window2 := components.NewWindow("window2", appConfig, mainWindow.ClientCanvas())
 
 	window2.SetBounds(base.Rect{
 		X:      0,
@@ -57,6 +54,11 @@ func main() {
 	window2.SetBackgroundColor(tcell.ColorBlue)
 
 	mainWindow.AddChild(&window2)
+
+	if e := application.Init(); e != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", e)
+		os.Exit(1)
+	}
 
 	application.Run()
 }
