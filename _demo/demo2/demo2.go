@@ -27,7 +27,7 @@ func main() {
 	appConfig := base.CreateDefaultApplicationConfig()
 	application := base.NewApplication(appConfig)
 
-	mainWindow := components.NewWindow("window1", appConfig.Message, &application)
+	mainWindow := components.NewWindow("window1", appConfig.Message, application.Canvas())
 
 	application.AddWindow(&mainWindow)
 

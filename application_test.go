@@ -56,7 +56,7 @@ func TestApplication_Exit_on_CtrlC(t *testing.T) {
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		app.Config().Screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
 
 		app.Run()
 	}

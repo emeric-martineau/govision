@@ -64,7 +64,7 @@ func main() {
 	appConfig = base.CreateDefaultApplicationConfig()
 	application := base.NewApplication(appConfig)
 
-	rootComponent := base.NewView("rootComponent", appConfig.Message, &application)
+	rootComponent := base.NewView("rootComponent", appConfig.Message, application.Canvas())
 	rootComponent.SetEnabled(true)
 	rootComponent.SetVisible(true)
 	rootComponent.SetBounds(base.Rect{

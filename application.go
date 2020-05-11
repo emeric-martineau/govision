@@ -28,8 +28,10 @@ type Application struct {
 	ExitOnCtrlC bool
 	// Windows list. The First item is Windows that have focus.
 	windowsList *list.List
-	// Application config
-	config ApplicationConfig
+	// Message bus.
+	message Bus
+	// Canvas to draw.
+	canvas applicationCanvas
 }
 
 // MainWindow return main windows.
@@ -46,13 +48,9 @@ func (a *Application) SetEncodingFallback(fb tcell.EncodingFallback) {
 
 // Init initialize screen (color, style...).
 func (a *Application) Init() error {
-	style := a.config.ScreenStyle.Style.
-		Foreground(a.config.ScreenStyle.ForegroundColor).
-		Background(a.config.ScreenStyle.BackgroundColor)
+	a.canvas.screen.SetStyle(a.canvas.brush)
 
-	a.config.Screen.SetStyle(style)
-
-	if e := a.config.Screen.Init(); e != nil {
+	if e := a.canvas.screen.Init(); e != nil {
 		return e
 	}
 
@@ -61,9 +59,9 @@ func (a *Application) Init() error {
 
 // Run application and wait event.
 func (a *Application) Run() {
-	defer a.config.Screen.Fini()
+	defer a.canvas.screen.Fini()
 
-	a.config.Screen.Clear()
+	a.canvas.screen.Clear()
 
 	applicationHandler := ApplicationHandler()
 
@@ -71,16 +69,16 @@ func (a *Application) Run() {
 	doContinue := true
 
 	// First time send draw message to create screen.
-	a.config.Message.Send(BuildDrawMessage(a.mainWindow.Handler()))
+	a.message.Send(BuildDrawMessage(a.mainWindow.Handler()))
 
-	go poolEvent(a.config.Screen, a.config.Message)
+	go poolEvent(a.canvas.screen, a.message)
 
 	// Remember last message type cause many WmDraw can occure. If that, don't
 	// refresh screen. Only if previous message is not a draw.
 	previousMessageType := WmDraw
 
 	for doContinue {
-		msg = <-*a.config.Message.Channel()
+		msg = <-*a.message.Channel()
 
 		if msg.Type == WmKey && a.ExitOnCtrlC {
 			if msg.Value.(*tcell.EventKey).Key() == tcell.KeyCtrlC {
@@ -94,7 +92,7 @@ func (a *Application) Run() {
 			a.callFocusedWindowHandleMessage(msg)
 
 			if msg.Type == WmDraw && previousMessageType != WmDraw {
-				a.config.Screen.Sync()
+				a.canvas.screen.Sync()
 			}
 		}
 
@@ -114,9 +112,9 @@ func (a *Application) WindowsList() []TComponent {
 	return wl
 }
 
-// Config return application confguration.
-func (a *Application) Config() ApplicationConfig {
-	return a.config
+// Canvas return application confguration.
+func (a *Application) Canvas() TCanvas {
+	return &a.canvas
 }
 
 // AddWindow add window to list. If first window, she become the main window.
@@ -132,37 +130,40 @@ func (a *Application) AddWindow(w TComponent) {
 //------------------------------------------------------------------------------
 // Internal Canvas
 
-// TODO is too strange to use application for canvas. Add method Canvas()
+type applicationCanvas struct {
+	brush  tcell.Style
+	screen tcell.Screen
+}
 
 // SetBrush set the brush to draw.
-func (a *Application) SetBrush(b tcell.Style) {
-	a.config.ScreenStyle.Style = b
+func (a *applicationCanvas) SetBrush(b tcell.Style) {
+	a.brush = b
 }
 
 // UpdateBounds call when component move or resize.
-func (a *Application) UpdateBounds(r Rect) {
+func (a *applicationCanvas) UpdateBounds(r Rect) {
 }
 
 // CreateCanvasFrom create a sub-canvas for `r` parameter.
-func (a *Application) CreateCanvasFrom(r Rect) TCanvas {
+func (a *applicationCanvas) CreateCanvasFrom(r Rect) TCanvas {
 	return NewCanvas(a, r)
 }
 
 // PrintChar print a charactere.
-func (a *Application) PrintChar(x int, y int, char rune) {
-	a.config.Screen.SetContent(x, y, char, nil, a.config.ScreenStyle.Style)
+func (a *applicationCanvas) PrintChar(x int, y int, char rune) {
+	a.screen.SetContent(x, y, char, nil, a.brush)
 }
 
 // PrintCharWithBrush print a charactere with brush.
-func (a *Application) PrintCharWithBrush(x int, y int, char rune, brush tcell.Style) {
-	a.config.Screen.SetContent(x, y, char, nil, brush)
+func (a *applicationCanvas) PrintCharWithBrush(x int, y int, char rune, brush tcell.Style) {
+	a.screen.SetContent(x, y, char, nil, brush)
 }
 
 // Fill fill canvas zone.
-func (a *Application) Fill(bounds Rect) {
+func (a *applicationCanvas) Fill(bounds Rect) {
 	for y := bounds.Y; y < bounds.Height; y++ {
 		for x := bounds.X; x < bounds.Width; x++ {
-			a.config.Screen.SetContent(x, y, ' ', nil, a.config.ScreenStyle.Style)
+			a.screen.SetContent(x, y, ' ', nil, a.brush)
 		}
 	}
 }
@@ -227,9 +228,17 @@ func poolEvent(screen tcell.Screen, message Bus) {
 
 // NewApplication create a text application.
 func NewApplication(config ApplicationConfig) Application {
+	ac := applicationCanvas{
+		screen: config.Screen,
+		brush: config.ScreenStyle.Style.
+			Foreground(config.ScreenStyle.ForegroundColor).
+			Background(config.ScreenStyle.BackgroundColor),
+	}
+
 	return Application{
 		ExitOnCtrlC: true,
 		windowsList: list.New(),
-		config:      config,
+		message:     config.Message,
+		canvas:      ac,
 	}
 }
