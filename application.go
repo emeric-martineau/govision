@@ -78,10 +78,6 @@ func (a *Application) Run() {
 
 	go poolEvent(a.canvas.screen, a.message)
 
-	// Remember last message type cause many WmDraw can occure. If that, don't
-	// refresh screen. Only if previous message is not a draw.
-	previousMessageType := WmDraw
-
 	for doContinue {
 		msg = <-*a.message.Channel()
 
@@ -95,13 +91,9 @@ func (a *Application) Run() {
 			doContinue = a.manageMyMessage(msg)
 		} else {
 			a.callFocusedWindowHandleMessage(msg)
-
-			if msg.Type == WmDraw && previousMessageType != WmDraw {
-				a.canvas.screen.Sync()
-			}
 		}
 
-		previousMessageType = msg.Type
+		a.canvas.screen.Sync()
 	}
 }
 
