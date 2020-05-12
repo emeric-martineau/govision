@@ -38,6 +38,21 @@ func CreateTestApplicationConfig() ApplicationConfig {
 	}
 }
 
+func TestApplication_MainWindow_is_nil(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+	e := app.Init()
+
+	if e == nil {
+		t.Error("Error should not be nil!")
+	}
+
+	if e.Error() != "main windows is nil" {
+		t.Error("Error message wrong!")
+	}
+}
+
 func TestApplication_Exit_on_CtrlC(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 

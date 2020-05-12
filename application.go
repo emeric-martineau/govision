@@ -16,6 +16,7 @@ package base
 
 import (
 	"container/list"
+	"errors"
 
 	"github.com/gdamore/tcell"
 )
@@ -48,6 +49,10 @@ func (a *Application) SetEncodingFallback(fb tcell.EncodingFallback) {
 
 // Init initialize screen (color, style...).
 func (a *Application) Init() error {
+	if a.mainWindow == nil {
+		return errors.New("main windows is nil")
+	}
+
 	a.canvas.screen.SetStyle(a.canvas.brush)
 
 	if e := a.canvas.screen.Init(); e != nil {
