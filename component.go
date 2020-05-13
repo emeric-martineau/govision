@@ -20,14 +20,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// OnEnabled is call when change enable.
-type OnEnabled func(TComponent, bool) bool
-
-// OnReceiveMessage is call when component receive message and you want overide
-// behavior.
-// Return true to stop message propagation.
-type OnReceiveMessage func(TComponent, Message) bool
-
 // Component is the base object of all widget.
 type Component struct {
 	// Name for debugging for example.
@@ -41,20 +33,40 @@ type Component struct {
 	// List of children component. List is always order by zorder.
 	children []TComponent
 	// If reveive message from HandlerMessage.
-	OnReceiveMessage OnReceiveMessage
+	onReceiveMessage OnReceiveMessage
 	// Call when component is enable.
-	OnEnabled OnEnabled
+	onEnabled OnEnabled
 	// Order to display.
 	zorder int
 	// Application configuration.
 	message Bus
 }
 
+// SetOnReceiveMessage set function when receive message.
+func (c *Component) SetOnReceiveMessage(f OnReceiveMessage) {
+	c.onReceiveMessage = f
+}
+
+// GetOnReceiveMessage return function to be execute when receive message.
+func (c *Component) GetOnReceiveMessage() OnReceiveMessage {
+	return c.onReceiveMessage
+}
+
+// SetOnEnabled set function when set enable.
+func (c *Component) SetOnEnabled(f OnEnabled) {
+	c.onEnabled = f
+}
+
+// GetOnEnabled return function to be execute when receive enable message.
+func (c *Component) GetOnEnabled() OnEnabled {
+	return c.onEnabled
+}
+
 // Manage message if it's for me.
 // Return true to stop message propagation.
 func (c *Component) manageMyMessage(msg Message) {
-	if c.OnReceiveMessage != nil {
-		c.OnReceiveMessage(c, msg)
+	if c.onReceiveMessage != nil {
+		c.onReceiveMessage(c, msg)
 	} else {
 		switch msg.Type {
 		case WmZorderChange:
@@ -127,8 +139,8 @@ func (c *Component) Handler() uuid.UUID {
 
 // SetEnabled active or disable component.
 func (c *Component) SetEnabled(status bool) {
-	if c.OnEnabled != nil {
-		c.enabled = c.OnEnabled(c, status)
+	if c.GetOnEnabled() != nil {
+		c.enabled = c.GetOnEnabled()(c, status)
 	} else {
 		c.enabled = status
 	}

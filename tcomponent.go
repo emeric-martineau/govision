@@ -18,6 +18,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// OnEnabled is call when change enable.
+type OnEnabled func(TComponent, bool) bool
+
+// OnReceiveMessage is call when component receive message and you want overide
+// behavior.
+// Return true to stop message propagation.
+type OnReceiveMessage func(TComponent, Message) bool
+
 // TComponent is the base object of all widget.
 type TComponent interface {
 	// Call when receive a message.
@@ -42,4 +50,12 @@ type TComponent interface {
 	GetZorder() int
 	// Return application configuration.
 	GetMessageBus() Bus
+	// Set function when receive message.
+	SetOnReceiveMessage(OnReceiveMessage)
+	// GetOnReceiveMessage return function to be execute when receive message.
+	GetOnReceiveMessage() OnReceiveMessage
+	// Set function when set enable.
+	SetOnEnabled(OnEnabled)
+	// GetOnEnabled return function to be execute when receive enable message.
+	GetOnEnabled() OnEnabled
 }

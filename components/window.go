@@ -124,6 +124,26 @@ func init() {
 	bordersChars[BorderTypeEmpty] = borderTypeEmpty
 }
 
+// SetOnReceiveMessage set function when receive message.
+func (w *Window) SetOnReceiveMessage(f base.OnReceiveMessage) {
+	w.view.SetOnReceiveMessage(f)
+}
+
+// GetOnReceiveMessage return function to be execute when receive message.
+func (w *Window) GetOnReceiveMessage() base.OnReceiveMessage {
+	return w.view.GetOnReceiveMessage()
+}
+
+// SetOnEnabled set function when set enable.
+func (w *Window) SetOnEnabled(f base.OnEnabled) {
+	w.view.SetOnEnabled(f)
+}
+
+// GetOnEnabled return function to be execute when receive enable message.
+func (w *Window) GetOnEnabled() base.OnEnabled {
+	return w.view.GetOnEnabled()
+}
+
 // SetOnDraw set ondraw callback.
 func (w *Window) SetOnDraw(f base.OnDraw) {
 	w.view.SetOnDraw(f)

@@ -24,7 +24,7 @@ import (
 // Application is base struct for create text UI.
 type Application struct {
 	// Main window.
-	mainWindow TComponent
+	mainWindow TView
 	// Quit application on Ctrl+C.
 	ExitOnCtrlC bool
 	// Windows list. The First item is Windows that have focus.
@@ -36,7 +36,7 @@ type Application struct {
 }
 
 // MainWindow return main windows.
-func (a *Application) MainWindow() TComponent {
+func (a *Application) MainWindow() TView {
 	return a.mainWindow
 }
 
@@ -99,11 +99,11 @@ func (a *Application) Run() {
 
 // WindowsList return the current windows list.
 // Becarefull, each call create a new array to return.
-func (a *Application) WindowsList() []TComponent {
-	wl := make([]TComponent, 0)
+func (a *Application) WindowsList() []TView {
+	wl := make([]TView, 0)
 
 	for e := a.windowsList.Front(); e != nil; e = e.Next() {
-		wl = append(wl, e.Value.(TComponent))
+		wl = append(wl, e.Value.(TView))
 	}
 
 	return wl
@@ -115,7 +115,7 @@ func (a *Application) Canvas() TCanvas {
 }
 
 // AddWindow add window to list. If first window, she become the main window.
-func (a *Application) AddWindow(w TComponent) {
+func (a *Application) AddWindow(w TView) {
 	a.windowsList.PushFront(w)
 
 	// TODO allow change main window
@@ -178,7 +178,7 @@ func (a *Application) manageMyMessage(msg Message) bool {
 	case WmDestroy:
 		// Remove window to list and check is MainWindow
 		for e := a.windowsList.Front(); e != nil; e = e.Next() {
-			if msg.Value == e.Value {
+			if msg.Value.(TComponent).Handler() == e.Value.(TComponent).Handler() {
 				a.windowsList.Remove(e)
 
 				if msg.Value == a.mainWindow {
@@ -198,7 +198,7 @@ func (a *Application) manageMyMessage(msg Message) bool {
 func (a *Application) callFocusedWindowHandleMessage(msg Message) {
 	w := a.windowsList.Front()
 
-	w.Value.(TComponent).HandleMessage(msg)
+	w.Value.(TView).HandleMessage(msg)
 }
 
 // Run in go function to wait keyboard or mouse event.

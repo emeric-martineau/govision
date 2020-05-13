@@ -18,6 +18,9 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+// OnDraw is call when change enable.
+type OnDraw func(TView)
+
 // TView is the base object of all visual widget.
 type TView interface {
 	TComponent

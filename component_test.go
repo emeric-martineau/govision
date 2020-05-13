@@ -44,9 +44,9 @@ func TestComponent_Enable_with_OnEnabled(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
 	c := NewComponent("You know my name", appConfig.Message)
-	c.OnEnabled = func(c TComponent, status bool) bool {
+	c.SetOnEnabled(func(c TComponent, status bool) bool {
 		return false
-	}
+	})
 
 	c.SetEnabled(true) // By default it's false
 
@@ -142,7 +142,7 @@ func TestComponent_Message_draw_send_to_a_child(t *testing.T) {
 
 	c1.AddChild(&c2)
 
-	c2.OnReceiveMessage = func(c TComponent, m Message) bool {
+	c2.SetOnReceiveMessage(func(c TComponent, m Message) bool {
 		isCalled = true
 
 		if c != &c2 {
@@ -154,7 +154,7 @@ func TestComponent_Message_draw_send_to_a_child(t *testing.T) {
 		}
 
 		return false
-	}
+	})
 
 	c1.HandleMessage(Message{
 		Handler: c1.Handler(),
@@ -177,7 +177,7 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 
 	c1.AddChild(&c2)
 
-	c1.OnReceiveMessage = func(c TComponent, m Message) bool {
+	c1.SetOnReceiveMessage(func(c TComponent, m Message) bool {
 		isCalledMain = true
 
 		if c != &c1 {
@@ -189,9 +189,9 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 		}
 
 		return false
-	}
+	})
 
-	c2.OnReceiveMessage = func(c TComponent, m Message) bool {
+	c2.SetOnReceiveMessage(func(c TComponent, m Message) bool {
 		isCalledChild = true
 
 		if c != &c2 {
@@ -203,7 +203,7 @@ func TestComponent_Message_draw_broadcast(t *testing.T) {
 		}
 
 		return false
-	}
+	})
 
 	c1.HandleMessage(Message{
 		Handler: BroadcastHandler(),
@@ -225,13 +225,13 @@ func TestComponent_Message_enable(t *testing.T) {
 	c1 := NewComponent("c1", appConfig.Message)
 	c1.SetEnabled(true) // By default it's false
 
-	c1.OnEnabled = func(c TComponent, status bool) bool {
+	c1.SetOnEnabled(func(c TComponent, status bool) bool {
 		if status == false {
 			t.Error("Bad value called!")
 		}
 
 		return false
-	}
+	})
 
 	c1.HandleMessage(Message{
 		Handler: c1.Handler(),

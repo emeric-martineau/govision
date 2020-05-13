@@ -69,8 +69,10 @@ func TestTime_WmEnable(t *testing.T) {
 	isCalled := false
 	appConfig := CreateTestApplicationConfig()
 
-	c1 := base.NewComponent("c1", appConfig.Message)
-	c1.OnReceiveMessage = func(c base.TComponent, m base.Message) bool {
+	app := base.NewApplication(appConfig)
+
+	c1 := base.NewView("c1", appConfig.Message, app.Canvas())
+	c1.SetOnReceiveMessage(func(c base.TComponent, m base.Message) bool {
 		switch m.Type {
 		case base.WmTimer:
 			isCalled = true
@@ -81,10 +83,7 @@ func TestTime_WmEnable(t *testing.T) {
 		}
 
 		return false
-	}
-
-	timer1 := NewTimer("timer1", 0, appConfig.Message)
-	timer1.SetParent(&c1)
+	})
 
 	// AddChild is not necessary
 	appConfig.Message.Send(base.Message{
@@ -93,7 +92,8 @@ func TestTime_WmEnable(t *testing.T) {
 		Value:   &c1,
 	})
 
-	app := base.NewApplication(appConfig)
+	timer1 := NewTimer("timer1", 0, appConfig.Message)
+	timer1.SetParent(&c1)
 
 	app.AddWindow(&c1)
 

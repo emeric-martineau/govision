@@ -56,9 +56,9 @@ func TestApplication_MainWindow_is_nil(t *testing.T) {
 func TestApplication_Exit_on_CtrlC(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window1", appConfig.Message)
-
 	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
@@ -80,10 +80,10 @@ func TestApplication_Exit_on_CtrlC(t *testing.T) {
 func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window1", appConfig.Message)
-	window1 := NewComponent("window2", appConfig.Message)
-
 	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	window1 := NewView("window2", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
@@ -121,13 +121,13 @@ func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
 func TestApplication_Exit_on_WmQuit(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window2", appConfig.Message)
-
 	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window2", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
-	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
+	mainWindow.SetOnReceiveMessage(func(c TComponent, m Message) bool {
 		if count := len(app.WindowsList()); count != 1 {
 			fmt.Printf("Windows list must have only 1 component. Found %d!\n", count)
 			//t.Errorf("Windows list must have only 1 component. Found %d!", count)
@@ -139,7 +139,7 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 		})
 
 		return false
-	}
+	})
 
 	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
@@ -158,19 +158,19 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
-	mainWindow := NewComponent("window3", appConfig.Message)
+	app := NewApplication(appConfig)
 
-	mainWindow.OnReceiveMessage = func(c TComponent, m Message) bool {
+	mainWindow := NewView("window3", appConfig.Message, app.Canvas())
+
+	mainWindow.SetOnReceiveMessage(func(c TComponent, m Message) bool {
 		appConfig.Message.Send(Message{
 			Handler: ApplicationHandler(),
 			Type:    WmDestroy,
-			Value:   c,
+			Value:   &mainWindow,
 		})
 
 		return false
-	}
-
-	app := NewApplication(appConfig)
+	})
 
 	app.AddWindow(&mainWindow)
 
@@ -179,11 +179,6 @@ func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		appConfig.Message.Send(Message{
-			Handler: mainWindow.Handler(),
-			Type:    WmDraw,
-		})
-
 		app.Run()
 	}
 

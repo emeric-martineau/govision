@@ -19,9 +19,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// OnDraw is call when change enable.
-type OnDraw func(TView)
-
 // View is the base object of all visual widget.
 type View struct {
 	component       Component
@@ -88,6 +85,26 @@ func (v *View) SetZorder(o int) {
 // GetZorder return odrer of draw.
 func (v *View) GetZorder() int {
 	return v.component.GetZorder()
+}
+
+// SetOnReceiveMessage set function when receive message.
+func (v *View) SetOnReceiveMessage(f OnReceiveMessage) {
+	v.component.SetOnReceiveMessage(f)
+}
+
+// GetOnReceiveMessage return function to be execute when receive message.
+func (v *View) GetOnReceiveMessage() OnReceiveMessage {
+	return v.component.GetOnReceiveMessage()
+}
+
+// SetOnEnabled set function when set enable.
+func (v *View) SetOnEnabled(f OnEnabled) {
+	v.component.SetOnEnabled(f)
+}
+
+// GetOnEnabled return function to be execute when receive enable message.
+func (v *View) GetOnEnabled() OnEnabled {
+	return v.component.GetOnEnabled()
 }
 
 // SetOnDraw set ondraw callback.
