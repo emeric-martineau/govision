@@ -74,7 +74,7 @@ func (a *Application) Run() {
 	doContinue := true
 
 	// First time send draw message to create screen.
-	a.message.Send(BuildDrawMessage(a.mainWindow.Handler()))
+	a.message.Send(BuildDrawMessage(applicationHandler))
 
 	go poolEvent(a.canvas.screen, a.message)
 
@@ -170,6 +170,10 @@ func (a *applicationCanvas) Fill(bounds Rect) {
 
 func (a *Application) manageMyMessage(msg Message) bool {
 	switch msg.Type {
+	case WmDraw:
+		for e := a.windowsList.Front(); e != nil; e = e.Next() {
+			e.Value.(TComponent).HandleMessage(BuildDrawMessage(BroadcastHandler()))
+		}
 	case WmQuit:
 		return false
 	case WmCreate:

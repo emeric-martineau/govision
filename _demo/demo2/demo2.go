@@ -55,6 +55,19 @@ func main() {
 
 	mainWindow.AddChild(&window2)
 
+	aRootWindow := components.NewWindow("window3", appConfig.Message, application.Canvas())
+
+	application.AddWindow(&aRootWindow)
+
+	aRootWindow.SetBounds(base.Rect{
+		X:      30,
+		Y:      2,
+		Height: 10,
+		Width:  20,
+	})
+	aRootWindow.SetEnabled(true)
+	aRootWindow.SetVisible(true)
+
 	if e := application.Init(); e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
 		os.Exit(1)
