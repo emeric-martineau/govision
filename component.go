@@ -65,9 +65,12 @@ func (c *Component) GetOnEnabled() OnEnabled {
 // Manage message if it's for me.
 // Return true to stop message propagation.
 func (c *Component) manageMyMessage(msg Message) {
+	stop := false
 	if c.onReceiveMessage != nil {
-		c.onReceiveMessage(c, msg)
-	} else {
+		stop = c.onReceiveMessage(c, msg)
+	}
+
+	if !stop {
 		switch msg.Type {
 		case WmZorderChange:
 			c.reorderChildren()
