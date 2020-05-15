@@ -161,3 +161,12 @@ func BuildDesactivateMessage(handler uuid.UUID) Message {
 		Value:   WaInactive,
 	}
 }
+
+// BuildClickLeftMouseMessage send message to windows gains focus.
+func BuildClickLeftMouseMessage(handler uuid.UUID, ev *tcell.EventMouse) Message {
+	return Message{
+		Handler: handler,
+		Type:    WmLButtonDown,
+		Value:   ev,
+	}
+}

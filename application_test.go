@@ -340,6 +340,9 @@ func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
+		// Only for code coverage
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(50, 50, tcell.Button1, 0)
+
 		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.Button1, 0)
 		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
 
@@ -359,5 +362,56 @@ func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
 
 	if !mainWindow.GetFocused() {
 		t.Error("Main window must be active")
+	}
+}
+
+func TestApplication_Event_mouse_click(t *testing.T) {
+	isMouseClick := false
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow.SetEnabled(true)
+	mainWindow.SetVisible(true)
+	mainWindow.SetBounds(Rect{
+		X:      0,
+		Y:      0,
+		Width:  10,
+		Height: 10,
+	})
+	mainWindow.SetOnReceiveMessage(func(c TComponent, msg Message) bool {
+		if msg.Type == WmLButtonDown {
+			isMouseClick = true
+		}
+
+		return false
+	})
+	app.AddWindow(&mainWindow)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.Button1, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+
+		timer := time.NewTimer(10 * time.Millisecond)
+
+		select {
+		case <-timer.C:
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+
+		app.Run()
+	}
+
+	if !isMouseClick {
+		t.Error("No WmLButtonDown event receive")
 	}
 }

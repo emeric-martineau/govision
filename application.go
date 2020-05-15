@@ -17,7 +17,6 @@ package base
 import (
 	"container/list"
 	"errors"
-	"fmt"
 
 	"github.com/gdamore/tcell"
 )
@@ -224,38 +223,55 @@ func (a *Application) findWindowsByCoordinate(x int, y int) (*list.Element, TVie
 	return nil, nil
 }
 
+func (a *Application) manageMouseLeftClick(ev *tcell.EventMouse) {
+	// Ok send event
+	x, y := ev.Position()
+
+	e, window := a.findWindowsByCoordinate(x, y)
+
+	if window == nil {
+		return
+	}
+
+	// Is windows has already focus ?
+	currentFocusedWindow := a.windowsList.Front().Value.(TView)
+
+	if window.Handler() == currentFocusedWindow.Handler() {
+		// Send a click message
+		window.HandleMessage(BuildClickLeftMouseMessage(window.Handler(), ev))
+	} else {
+		// Send focus message
+		a.windowsList.MoveToFront(e)
+
+		currentFocusedWindow.HandleMessage(BuildDesactivateMessage(currentFocusedWindow.Handler()))
+		window.HandleMessage(BuildActivateMessage(window.Handler()))
+	}
+}
+
 func (a *Application) manageMouseMessage(msg Message) {
 	ev := msg.Value.(*tcell.EventMouse)
 
 	// Left click
-	// Check if before right click is active
+	// Check if before left click is active
 	if ev.Buttons()&tcell.Button1 != 0 && a.previousMousEvent.Buttons()&tcell.Button1 == 0 {
-		// Ok send event
-		x, y := ev.Position()
-		e, window := a.findWindowsByCoordinate(x, y)
-
-		// Is windows has already focus ?
-		currentFocusedWindow := a.windowsList.Front().Value.(TView)
-
-		if window.Handler() == currentFocusedWindow.Handler() {
-			// Send a click message
-			// TODO
-		} else {
-			// Send focus message
-			a.windowsList.MoveToFront(e)
-
-			currentFocusedWindow.HandleMessage(BuildDesactivateMessage(currentFocusedWindow.Handler()))
-			window.HandleMessage(BuildActivateMessage(window.Handler()))
-		}
-
-		PrintStringOnScreen(a.canvas.screen, tcell.ColorBlack, tcell.ColorYellow, 50, 1, fmt.Sprintf("Left %+v", a.windowsList.Front().Value))
+		a.manageMouseLeftClick(ev)
+	} else if ev.Buttons()&tcell.Button1 == 0 && a.previousMousEvent.Buttons()&tcell.Button1 != 0 {
+		// TODO WmLButtonUp
+	} else {
+		// TODO send what ?
 	}
 
 	// Right click
-	if ev.Buttons()&tcell.Button3 != 0 {
-		// Right
-		PrintStringOnScreen(a.canvas.screen, tcell.ColorBlack, tcell.ColorYellow, 50, 1, "Right")
+	// Check if before right click is active
+	if ev.Buttons()&tcell.Button3 != 0 && a.previousMousEvent.Buttons()&tcell.Button3 == 0 {
+		// TODO set focus. Maybe same function that manageMouseLeftClick() but send WmRButtonDown
+	} else if ev.Buttons()&tcell.Button3 == 0 && a.previousMousEvent.Buttons()&tcell.Button3 != 0 {
+		// TODO WmRButtonUp
+	} else {
+		// TODO Send what ?
 	}
+
+	// TODO send mouse move ?
 }
 
 // Call focused windows if not nil.
