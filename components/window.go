@@ -124,6 +124,9 @@ func init() {
 	bordersChars[BorderTypeEmpty] = borderTypeEmpty
 }
 
+//------------------------------------------------------------------------------
+// From TComponent
+
 // SetOnReceiveMessage set function when receive message.
 func (w *Window) SetOnReceiveMessage(f base.OnReceiveMessage) {
 	w.view.SetOnReceiveMessage(f)
@@ -143,6 +146,89 @@ func (w *Window) SetOnEnabled(f base.OnEnabled) {
 func (w *Window) GetOnEnabled() base.OnEnabled {
 	return w.view.GetOnEnabled()
 }
+
+// Name of component.
+func (w *Window) Name() string {
+	return w.view.Name()
+}
+
+// Handler of component (UUID).
+func (w *Window) Handler() uuid.UUID {
+	return w.view.Handler()
+}
+
+// SetEnabled enable component.
+func (w *Window) SetEnabled(e bool) {
+	w.view.SetEnabled(e)
+}
+
+// GetEnabled return is component is enable.
+func (w *Window) GetEnabled() bool {
+	return w.view.GetEnabled()
+}
+
+// SetParent set parent component.
+func (w *Window) SetParent(p base.TComponent) {
+	w.view.SetParent(p)
+}
+
+// GetParent get parent component.
+func (w *Window) GetParent() base.TComponent {
+	return w.view.GetParent()
+}
+
+// AddChild add a child to component.
+func (w *Window) AddChild(c base.TComponent) {
+	w.view.AddChild(c)
+}
+
+// RemoveChild remove a child to component.
+func (w *Window) RemoveChild(c base.TComponent) {
+	w.view.RemoveChild(c)
+}
+
+// Children return list of children of component.
+func (w *Window) Children() []base.TComponent {
+	return w.view.Children()
+}
+
+// SetZorder set the new odrer of draw.
+func (w *Window) SetZorder(o int) {
+	w.view.SetZorder(o)
+}
+
+// GetZorder return odrer of draw.
+func (w *Window) GetZorder() int {
+	return w.view.GetZorder()
+}
+
+// GetMessageBus return application bus.
+func (w *Window) GetMessageBus() base.Bus {
+	return w.view.GetMessageBus()
+}
+
+// HandleMessage is use to manage message.
+func (w *Window) HandleMessage(msg base.Message) bool {
+
+	switch msg.Handler {
+	case w.Handler():
+		w.manageMyMessage(msg)
+		return true
+	case base.BroadcastHandler():
+		w.manageMyMessage(msg)
+
+		// Redraw children.
+		for _, child := range w.Children() {
+			if child.HandleMessage(msg) {
+			}
+		}
+	}
+
+	return false
+}
+
+//------------------------------------------------------------------------------
+// From TView
 
 // SetOnDraw set ondraw callback.
 func (w *Window) SetOnDraw(f base.OnDraw) {
@@ -219,66 +305,6 @@ func (w *Window) GetClientBounds() base.Rect {
 	return calculateClientBounds(w.GetBounds(), w.Border.Type)
 }
 
-// Name of component.
-func (w *Window) Name() string {
-	return w.view.Name()
-}
-
-// Handler of component (UUID).
-func (w *Window) Handler() uuid.UUID {
-	return w.view.Handler()
-}
-
-// SetEnabled enable component.
-func (w *Window) SetEnabled(e bool) {
-	w.view.SetEnabled(e)
-}
-
-// GetEnabled return is component is enable.
-func (w *Window) GetEnabled() bool {
-	return w.view.GetEnabled()
-}
-
-// SetParent set parent component.
-func (w *Window) SetParent(p base.TComponent) {
-	w.view.SetParent(p)
-}
-
-// GetParent get parent component.
-func (w *Window) GetParent() base.TComponent {
-	return w.view.GetParent()
-}
-
-// AddChild add a child to component.
-func (w *Window) AddChild(c base.TComponent) {
-	w.view.AddChild(c)
-}
-
-// RemoveChild remove a child to component.
-func (w *Window) RemoveChild(c base.TComponent) {
-	w.view.RemoveChild(c)
-}
-
-// Children return list of children of component.
-func (w *Window) Children() []base.TComponent {
-	return w.view.Children()
-}
-
-// SetZorder set the new odrer of draw.
-func (w *Window) SetZorder(o int) {
-	w.view.SetZorder(o)
-}
-
-// GetZorder return odrer of draw.
-func (w *Window) GetZorder() int {
-	return w.view.GetZorder()
-}
-
-// GetMessageBus return application bus.
-func (w *Window) GetMessageBus() base.Bus {
-	return w.view.GetMessageBus()
-}
-
 // Draw the view.
 func (w *Window) Draw() {
 	if !w.GetVisible() {
@@ -306,6 +332,9 @@ func (w *Window) Draw() {
 
 	drawBorderRight(canvas, w)
 }
+
+//------------------------------------------------------------------------------
+// Internal function.
 
 func drawTitle(canvas base.TCanvas, w *Window) {
 	titleBounds := base.Rect{
@@ -410,26 +439,6 @@ func (w *Window) manageMyMessage(msg base.Message) {
 	}
 }
 
-// HandleMessage is use to manage message.
-func (w *Window) HandleMessage(msg base.Message) bool {
-
-	switch msg.Handler {
-	case w.Handler():
-		w.manageMyMessage(msg)
-		return true
-	case base.BroadcastHandler():
-		w.manageMyMessage(msg)
-
-		// Redraw children.
-		for _, child := range w.Children() {
-			if child.HandleMessage(msg) {
-			}
-		}
-	}
-
-	return false
-}
-
 func calculateClientBounds(bounds base.Rect, borderType BorderType) base.Rect {
 	/*
 		  TODO window type
@@ -453,6 +462,9 @@ func calculateClientBounds(bounds base.Rect, borderType BorderType) base.Rect {
 
 	return bounds
 }
+
+//------------------------------------------------------------------------------
+// Constrcutor.
 
 // NewWindow create new window.
 func NewWindow(name string, message base.Bus, parentCanvas base.TCanvas) Window {

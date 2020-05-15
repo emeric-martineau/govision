@@ -32,6 +32,9 @@ type View struct {
 	onDraw OnDraw
 }
 
+//------------------------------------------------------------------------------
+// From TComponent
+
 // Name of component.
 func (v *View) Name() string {
 	return v.component.Name()
@@ -107,6 +110,28 @@ func (v *View) GetOnEnabled() OnEnabled {
 	return v.component.GetOnEnabled()
 }
 
+// GetMessageBus return application config.
+func (v *View) GetMessageBus() Bus {
+	return v.component.GetMessageBus()
+}
+
+// HandleMessage is use to manage message.
+func (v *View) HandleMessage(msg Message) bool {
+	switch msg.Handler {
+	case v.Handler():
+		v.manageMyMessage(msg)
+		return true
+	case BroadcastHandler():
+		v.manageMyMessage(msg)
+	}
+
+	// Because Component send message to child if broadcast or draw.
+	return v.component.HandleMessage(msg)
+}
+
+//-------------------------------------------------------------------------------
+// From TView
+
 // SetOnDraw set ondraw callback.
 func (v *View) SetOnDraw(f OnDraw) {
 	v.onDraw = f
@@ -179,11 +204,6 @@ func (v *View) SetForegroundColor(c tcell.Color) {
 	v.foregroundColor = c
 }
 
-// GetMessageBus return application config.
-func (v *View) GetMessageBus() Bus {
-	return v.component.GetMessageBus()
-}
-
 // Draw the view.
 func (v *View) Draw() {
 	if !v.visible {
@@ -233,20 +253,6 @@ func (v *View) manageMyMessage(msg Message) {
 	default:
 		v.component.HandleMessage(msg)
 	}
-}
-
-// HandleMessage is use to manage message.
-func (v *View) HandleMessage(msg Message) bool {
-	switch msg.Handler {
-	case v.Handler():
-		v.manageMyMessage(msg)
-		return true
-	case BroadcastHandler():
-		v.manageMyMessage(msg)
-	}
-
-	// Because Component send message to child if broadcast or draw.
-	return v.component.HandleMessage(msg)
 }
 
 //------------------------------------------------------------------------------
