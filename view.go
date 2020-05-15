@@ -250,6 +250,8 @@ func (v *View) manageMyMessage(msg Message) {
 		v.SetBounds(msg.Value.(Rect))
 		// Redraw all components cause maybe overide a component with Zorder
 		v.component.message.Send(BuildDrawMessage(BroadcastHandler()))
+	case WmActivate:
+		v.SetFocused(msg.Value == WaActive)
 	default:
 		v.component.HandleMessage(msg)
 	}

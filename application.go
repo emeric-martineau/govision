@@ -17,6 +17,7 @@ package base
 import (
 	"container/list"
 	"errors"
+	"fmt"
 
 	"github.com/gdamore/tcell"
 )
@@ -33,6 +34,8 @@ type Application struct {
 	message Bus
 	// Canvas to draw.
 	canvas applicationCanvas
+	// Keep previous event of mouse to know if cursor move, click...
+	previousMousEvent tcell.EventMouse
 }
 
 // MainWindow return main windows.
@@ -59,6 +62,8 @@ func (a *Application) Init() error {
 		return e
 	}
 
+	a.canvas.screen.EnableMouse()
+
 	return nil
 }
 
@@ -77,6 +82,8 @@ func (a *Application) Run() {
 	a.message.Send(BuildDrawMessage(applicationHandler))
 
 	go poolEvent(a.canvas.screen, a.message)
+
+	a.windowsList.Front().Value.(TView).SetFocused(true)
 
 	for doContinue {
 		msg = <-*a.message.Channel()
@@ -158,18 +165,20 @@ func (a *applicationCanvas) PrintCharWithBrush(x int, y int, char rune, brush tc
 
 // Fill fill canvas zone.
 func (a *applicationCanvas) Fill(bounds Rect) {
-	for y := bounds.Y; y < bounds.Height; y++ {
-		for x := bounds.X; x < bounds.Width; x++ {
+	for y := bounds.Y; y < bounds.Y+bounds.Height; y++ {
+		for x := bounds.X; x < bounds.X+bounds.Width; x++ {
 			a.screen.SetContent(x, y, ' ', nil, a.brush)
 		}
 	}
 }
 
 //------------------------------------------------------------------------------
-// Internal function
+// Internal functions
 
 func (a *Application) manageMyMessage(msg Message) bool {
 	switch msg.Type {
+	case WmMouse:
+		a.manageMouseMessage(msg)
 	case WmDraw:
 		for e := a.windowsList.Front(); e != nil; e = e.Next() {
 			e.Value.(TComponent).HandleMessage(BuildDrawMessage(BroadcastHandler()))
@@ -197,6 +206,58 @@ func (a *Application) manageMyMessage(msg Message) bool {
 	return true
 }
 
+func (a *Application) findWindowsByCoordinate(x int, y int) (*list.Element, TView) {
+	var currentWindow TView
+	var currentWindowBounds Rect
+
+	for e := a.windowsList.Front(); e != nil; e = e.Next() {
+		currentWindow = e.Value.(TView)
+		currentWindowBounds = currentWindow.GetBounds()
+
+		if currentWindow.GetVisible() &&
+			InVertical(y, currentWindowBounds) &&
+			InHorizontal(x, currentWindowBounds) {
+			return e, currentWindow
+		}
+	}
+
+	return nil, nil
+}
+
+func (a *Application) manageMouseMessage(msg Message) {
+	ev := msg.Value.(*tcell.EventMouse)
+
+	// Left click
+	// Check if before right click is active
+	if ev.Buttons()&tcell.Button1 != 0 && a.previousMousEvent.Buttons()&tcell.Button1 == 0 {
+		// Ok send event
+		x, y := ev.Position()
+		e, window := a.findWindowsByCoordinate(x, y)
+
+		// Is windows has already focus ?
+		currentFocusedWindow := a.windowsList.Front().Value.(TView)
+
+		if window.Handler() == currentFocusedWindow.Handler() {
+			// Send a click message
+			// TODO
+		} else {
+			// Send focus message
+			a.windowsList.MoveToFront(e)
+
+			currentFocusedWindow.HandleMessage(BuildDesactivateMessage(currentFocusedWindow.Handler()))
+			window.HandleMessage(BuildActivateMessage(window.Handler()))
+		}
+
+		PrintStringOnScreen(a.canvas.screen, tcell.ColorBlack, tcell.ColorYellow, 50, 1, fmt.Sprintf("Left %+v", a.windowsList.Front().Value))
+	}
+
+	// Right click
+	if ev.Buttons()&tcell.Button3 != 0 {
+		// Right
+		PrintStringOnScreen(a.canvas.screen, tcell.ColorBlack, tcell.ColorYellow, 50, 1, "Right")
+	}
+}
+
 // Call focused windows if not nil.
 // Return false if need stop application.
 func (a *Application) callFocusedWindowHandleMessage(msg Message) {
@@ -210,7 +271,15 @@ func poolEvent(screen tcell.Screen, message Bus) {
 	for {
 		ev := screen.PollEvent()
 
-		switch ev := ev.(type) { // TODO Mouse message
+		switch ev := ev.(type) {
+		case *tcell.EventMouse:
+			message.Send(Message{
+				Handler: ApplicationHandler(),
+				Type:    WmMouse,
+				Value:   ev,
+			})
+
+			screen.Sync()
 		case *tcell.EventKey:
 			message.Send(Message{
 				Handler: BroadcastHandler(),

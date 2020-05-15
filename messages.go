@@ -28,41 +28,61 @@ type Message struct {
 
 // WmNull is empty message, ignore it (internal use only). This is never use by
 // GoVision.
-const WmNull uint = 0x00
+const WmNull uint = 0
 
 // WmEnable send to enable or disable a component.
-const WmEnable uint = 0x01
+const WmEnable uint = 1
 
 // WmKey when a key is pressed.
-const WmKey uint = 0x02
+const WmKey uint = 2
 
 // WmScreenResize when a screen size change.
-const WmScreenResize uint = 0x03
+const WmScreenResize uint = 3
 
 // WmDraw draw component. Becarefull! If you send to one component, only this
 // component and his child draw.
-const WmDraw uint = 0x04
+const WmDraw uint = 4
 
 // WmZorderChange send to parent when you change Zorder of children.
-const WmZorderChange uint = 0x05
+const WmZorderChange uint = 5
 
 // WmQuit force application to shutdown.
-const WmQuit uint = 0x06
+const WmQuit uint = 6
 
 // WmChangeBounds send to component to change size, or move.
-const WmChangeBounds uint = 0x07
+const WmChangeBounds uint = 7
 
 // WmTimer send to Timer parent component if OnTimer is nil.
-const WmTimer uint = 0x08
+const WmTimer uint = 8
 
 // WmCreate sent when you have create windows and want add in list.
-const WmCreate uint = 0x09
+const WmCreate uint = 9
 
 // WmDestroy sent when you want remove windows from list and let GC remove it.
-const WmDestroy uint = 0x0A
+const WmDestroy uint = 10
+
+// WmMouse send when mouse occure. Generally manage by Application struct.
+// If nothing can be done with, send to Window struct.
+const WmMouse uint = 11
+
+// WmLButtonDown send when left button pressed.
+const WmLButtonDown uint = 12
+
+// WmRButtonDown send when right button pressed.
+const WmRButtonDown uint = 13
+
+// WmActivate Sent to both the window being activated and the window being deactivated.
+// Value can be WaActive or WaInactive.
+const WmActivate uint = 14
 
 // WmUser allow user to have own message.
 const WmUser uint = ^uint(0) / 2
+
+// WaInactive Deactivated.
+const WaInactive uint = 0
+
+// WaActive Activated.
+const WaActive uint = 1
 
 // BuildKeyMessage build a message for keyboard event.
 func BuildKeyMessage(event *tcell.EventKey) Message {
@@ -121,5 +141,23 @@ func BuildChangeBoundsMessage(handler uuid.UUID, bounds Rect) Message {
 		Handler: handler,
 		Type:    WmChangeBounds,
 		Value:   bounds,
+	}
+}
+
+// BuildActivateMessage send message to windows gains focus.
+func BuildActivateMessage(handler uuid.UUID) Message {
+	return Message{
+		Handler: handler,
+		Type:    WmActivate,
+		Value:   WaActive,
+	}
+}
+
+// BuildDesactivateMessage send message to windows gains focus.
+func BuildDesactivateMessage(handler uuid.UUID) Message {
+	return Message{
+		Handler: handler,
+		Type:    WmActivate,
+		Value:   WaInactive,
 	}
 }

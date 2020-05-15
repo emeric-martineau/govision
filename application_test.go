@@ -15,11 +15,25 @@ package base
 // limitations under the License.
 
 import (
+	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gdamore/tcell"
 )
+
+type ErrorScreen struct {
+	tcell.Screen
+}
+
+func (e ErrorScreen) SetStyle(style tcell.Style) {
+
+}
+
+func (e ErrorScreen) Init() error {
+	return errors.New("Fake error")
+}
 
 func CreateTestApplicationConfig() ApplicationConfig {
 	screen := tcell.NewSimulationScreen("")
@@ -38,18 +52,35 @@ func CreateTestApplicationConfig() ApplicationConfig {
 	}
 }
 
-func TestApplication_MainWindow_is_nil(t *testing.T) {
+func TestApplication_Error_on_screen_init(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
+	appConfig.Screen = ErrorScreen{}
 
 	app := NewApplication(appConfig)
+
+	v := NewView("name", appConfig.Message, app.Canvas())
+
+	app.AddWindow(&v)
+
 	e := app.Init()
 
 	if e == nil {
 		t.Error("Error should not be nil!")
 	}
 
-	if e.Error() != "main windows is nil" {
-		t.Error("Error message wrong!")
+	if e != nil && e.Error() != "Fake error" {
+		t.Error("Error should be nil!")
+	}
+}
+
+func TestApplication_MainWindow_is_nil(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+	e := app.Init()
+
+	if e != nil && e.Error() != "main windows is nil" {
+		t.Error("Error should be nil!")
 	}
 }
 
@@ -188,5 +219,145 @@ func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 		for _, w := range app.WindowsList() {
 			t.Errorf("%+v\n", w)
 		}
+	}
+}
+
+func TestApplication_Canvas_draw(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+
+	app.AddWindow(&mainWindow)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+
+		canvas := app.Canvas()
+
+		st1 := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
+		canvas.SetBrush(st1)
+		canvas.PrintChar(0, 0, '&')
+
+		st2 := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorGreen)
+		canvas.PrintCharWithBrush(1, 1, '!', st2)
+
+		st3 := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorBlue)
+		r3 := Rect{
+			X:      2,
+			Y:      2,
+			Height: 3,
+			Width:  4,
+		}
+		canvas.SetBrush(st3)
+		canvas.Fill(r3)
+
+		appConfig.Screen.Show()
+
+		checkCell(appConfig.Screen, 0, 0, '&', st1, t)
+		checkCell(appConfig.Screen, 0, 0, '!', st2, t)
+
+		for x := r3.X; x < r3.X+r3.Width; x++ {
+			for y := r3.Y; y < r3.Y+r3.Height; y++ {
+				if e := checkCell(appConfig.Screen, x, y, ' ', st3, t); e != nil {
+					t.Error(e)
+				}
+			}
+		}
+
+		// Just for code coverage
+		canvas.UpdateBounds(r3)
+
+		appConfig.Screen.Fini()
+	}
+}
+
+// Why not working ?
+func TestApplication_Event_resize(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+
+	app.AddWindow(&mainWindow)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).SetSize(10, 20)
+		appConfig.Screen.Show()
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+
+		app.Run()
+	}
+}
+
+func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow.SetEnabled(true)
+	mainWindow.SetVisible(true)
+	mainWindow.SetBounds(Rect{
+		X:      0,
+		Y:      0,
+		Width:  10,
+		Height: 10,
+	})
+
+	app.AddWindow(&mainWindow)
+
+	window2 := NewView("window2", appConfig.Message, app.Canvas())
+	window2.SetEnabled(true)
+	window2.SetVisible(true)
+	window2.SetBounds(Rect{
+		X:      10,
+		Y:      10,
+		Width:  10,
+		Height: 10,
+	})
+
+	app.AddWindow(&window2)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.Button1, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+
+		timer := time.NewTimer(10 * time.Millisecond)
+
+		select {
+		case <-timer.C:
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+
+		app.Run()
+	}
+
+	if window2.GetFocused() {
+		t.Error("Window2 must be inactive")
+	}
+
+	if !mainWindow.GetFocused() {
+		t.Error("Main window must be active")
 	}
 }
