@@ -65,15 +65,21 @@ const WmDestroy uint = 10
 // If nothing can be done with, send to Window struct.
 const WmMouse uint = 11
 
-// WmLButtonDown send when left button pressed.
+// WmLButtonDown send when left button pressed on window beneath cursor.
 const WmLButtonDown uint = 12
 
-// WmRButtonDown send when right button pressed.
-const WmRButtonDown uint = 13
+// WmLButtonUp send when left button released on window beneath cursor.
+const WmLButtonUp uint = 13
+
+// WmRButtonDown send when right button pressed on window beneath cursor.
+const WmRButtonDown uint = 14
+
+// WmRButtonUp send when right button released on window beneath cursor.
+const WmRButtonUp uint = 15
 
 // WmActivate Sent to both the window being activated and the window being deactivated.
 // Value can be WaActive or WaInactive.
-const WmActivate uint = 14
+const WmActivate uint = 16
 
 // WmUser allow user to have own message.
 const WmUser uint = ^uint(0) / 2
@@ -162,11 +168,11 @@ func BuildDesactivateMessage(handler uuid.UUID) Message {
 	}
 }
 
-// BuildClickLeftMouseMessage send message to windows gains focus.
-func BuildClickLeftMouseMessage(handler uuid.UUID, ev *tcell.EventMouse) Message {
+// BuildClickMouseMessage send message to windows gains focus.
+func BuildClickMouseMessage(handler uuid.UUID, ev *tcell.EventMouse, side uint) Message {
 	return Message{
 		Handler: handler,
-		Type:    WmLButtonDown,
+		Type:    side,
 		Value:   ev,
 	}
 }

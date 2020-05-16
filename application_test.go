@@ -302,7 +302,7 @@ func TestApplication_Event_resize(t *testing.T) {
 	}
 }
 
-func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
+func eventMouseClickChangeFocus(t *testing.T, x, y int, button tcell.ButtonMask) (TView, TView) {
 	appConfig := CreateTestApplicationConfig()
 
 	app := NewApplication(appConfig)
@@ -340,11 +340,8 @@ func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
 	if e := app.Init(); e != nil {
 		t.Error("Cannot initialize screen")
 	} else {
-		// Only for code coverage
-		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(50, 50, tcell.Button1, 0)
-
-		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.Button1, 0)
-		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(x, y, button, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(x, y, tcell.ButtonNone, 0)
 
 		timer := time.NewTimer(10 * time.Millisecond)
 
@@ -356,6 +353,12 @@ func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
 		app.Run()
 	}
 
+	return &mainWindow, &window2
+}
+
+func TestApplication_Event_mouse_click_right_change_focus(t *testing.T) {
+	mainWindow, window2 := eventMouseClickChangeFocus(t, 5, 5, tcell.Button3)
+
 	if window2.GetFocused() {
 		t.Error("Window2 must be inactive")
 	}
@@ -363,6 +366,22 @@ func TestApplication_Event_mouse_click_change_focus(t *testing.T) {
 	if !mainWindow.GetFocused() {
 		t.Error("Main window must be active")
 	}
+}
+
+func TestApplication_Event_mouse_click_left_change_focus(t *testing.T) {
+	mainWindow, window2 := eventMouseClickChangeFocus(t, 5, 5, tcell.Button1)
+
+	if window2.GetFocused() {
+		t.Error("Window2 must be inactive")
+	}
+
+	if !mainWindow.GetFocused() {
+		t.Error("Main window must be active")
+	}
+}
+
+func TestApplication_Event_mouse_click_out_of_window(t *testing.T) {
+	eventMouseClickChangeFocus(t, 50, 50, tcell.Button1)
 }
 
 func TestApplication_Event_mouse_click(t *testing.T) {

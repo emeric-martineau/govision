@@ -223,7 +223,7 @@ func (a *Application) findWindowsByCoordinate(x int, y int) (*list.Element, TVie
 	return nil, nil
 }
 
-func (a *Application) manageMouseLeftClick(ev *tcell.EventMouse) {
+func (a *Application) manageMouseClickDown(ev *tcell.EventMouse, side uint) {
 	// Ok send event
 	x, y := ev.Position()
 
@@ -238,7 +238,7 @@ func (a *Application) manageMouseLeftClick(ev *tcell.EventMouse) {
 
 	if window.Handler() == currentFocusedWindow.Handler() {
 		// Send a click message
-		window.HandleMessage(BuildClickLeftMouseMessage(window.Handler(), ev))
+		window.HandleMessage(BuildClickMouseMessage(window.Handler(), ev, side))
 	} else {
 		// Send focus message
 		a.windowsList.MoveToFront(e)
@@ -248,30 +248,43 @@ func (a *Application) manageMouseLeftClick(ev *tcell.EventMouse) {
 	}
 }
 
+func (a *Application) manageMouseClickUp(ev *tcell.EventMouse, side uint) {
+	// Ok send event
+	x, y := ev.Position()
+
+	_, window := a.findWindowsByCoordinate(x, y)
+
+	if window == nil {
+		return
+	}
+
+	window.HandleMessage(BuildClickMouseMessage(window.Handler(), ev, side))
+}
+
 func (a *Application) manageMouseMessage(msg Message) {
 	ev := msg.Value.(*tcell.EventMouse)
-
 	// Left click
 	// Check if before left click is active
 	if ev.Buttons()&tcell.Button1 != 0 && a.previousMousEvent.Buttons()&tcell.Button1 == 0 {
-		a.manageMouseLeftClick(ev)
+		a.manageMouseClickDown(ev, WmLButtonDown)
 	} else if ev.Buttons()&tcell.Button1 == 0 && a.previousMousEvent.Buttons()&tcell.Button1 != 0 {
-		// TODO WmLButtonUp
-	} else {
-		// TODO send what ?
+		a.manageMouseClickUp(ev, WmLButtonUp)
 	}
 
 	// Right click
 	// Check if before right click is active
 	if ev.Buttons()&tcell.Button3 != 0 && a.previousMousEvent.Buttons()&tcell.Button3 == 0 {
-		// TODO set focus. Maybe same function that manageMouseLeftClick() but send WmRButtonDown
+		a.manageMouseClickDown(ev, WmRButtonDown)
 	} else if ev.Buttons()&tcell.Button3 == 0 && a.previousMousEvent.Buttons()&tcell.Button3 != 0 {
-		// TODO WmRButtonUp
-	} else {
-		// TODO Send what ?
+		a.manageMouseClickUp(ev, WmRButtonUp)
 	}
 
-	// TODO send mouse move ?
+	// TODO mouse enter, mouse move, mouse leave
+	// TODO remember the last window to which a mouse message was sent
+
+	// TODO draw cursor. Get cursor type of window.
+
+	a.previousMousEvent = *ev
 }
 
 // Call focused windows if not nil.
