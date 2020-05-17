@@ -81,6 +81,12 @@ const WmRButtonUp uint = 15
 // Value can be WaActive or WaInactive.
 const WmActivate uint = 16
 
+// WmMouseEnter sent when mouse enter to TView.
+const WmMouseEnter uint = 17
+
+// WmMouseLeave sent when mouse leave to TView.
+const WmMouseLeave uint = 18
+
 // WmUser allow user to have own message.
 const WmUser uint = ^uint(0) / 2
 
@@ -174,5 +180,25 @@ func BuildClickMouseMessage(handler uuid.UUID, ev *tcell.EventMouse, side uint) 
 		Handler: handler,
 		Type:    side,
 		Value:   ev,
+	}
+}
+
+// BuildMouseEnterMessage send message to windows when mouse enter.
+func BuildMouseEnterMessage(handler uuid.UUID, x, y int) Message {
+	return Message{
+		Handler: handler,
+		Type:    WmMouseEnter,
+		Value: Rect{
+			X: x,
+			Y: y,
+		},
+	}
+}
+
+// BuildMouseLeaveMessage send message to windows when mouse enter.
+func BuildMouseLeaveMessage(handler uuid.UUID) Message {
+	return Message{
+		Handler: handler,
+		Type:    WmMouseLeave,
 	}
 }

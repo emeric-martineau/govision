@@ -68,6 +68,17 @@ func main() {
 	})
 	aRootWindow.SetEnabled(true)
 	aRootWindow.SetVisible(true)
+	aRootWindow.SetOnReceiveMessage(func(c base.TComponent, msg base.Message) bool {
+		if msg.Type == base.WmMouseEnter {
+			base.PrintStringOnScreen(appConfig.Screen, tcell.ColorBlack, tcell.ColorYellow, 50, 5, "Mouse enter")
+		} else if msg.Type == base.WmMouseLeave {
+			base.PrintStringOnScreen(appConfig.Screen, tcell.ColorBlack, tcell.ColorYellow, 50, 5, "Mouse leave")
+		}
+
+		return false
+	})
+
+	fmt.Printf("%+v\n", aRootWindow)
 
 	if e := application.Init(); e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)

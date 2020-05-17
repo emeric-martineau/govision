@@ -33,6 +33,8 @@ type lastCursorPosAndStyle struct {
 type Application struct {
 	// Main window.
 	mainWindow TView
+	// Remember last windows under cursor to sent mouse move, enter, leave.
+	lastWindowUnderMouse TView
 	// Quit application on Ctrl+C.
 	ExitOnCtrlC bool
 	// Show text mouse cursor.
@@ -287,6 +289,7 @@ func (a *Application) manageMouseClickUp(ev *tcell.EventMouse, side uint) {
 }
 
 func (a *Application) displayMouseCursor(x, y int) {
+	// TODO Get cursor type of window to draw cross, hour glass...
 	if a.ShowMouseCursor && (a.lastCursorPosAndStyle.x != x || a.lastCursorPosAndStyle.y != y) {
 		// Cursor move
 		// First restore last position
@@ -313,27 +316,57 @@ func (a *Application) displayMouseCursor(x, y int) {
 
 func (a *Application) manageMouseMessage(msg Message) {
 	ev := msg.Value.(*tcell.EventMouse)
+	checkMouseMove := true
+
 	// Left click
 	// Check if before left click is active
 	if ev.Buttons()&tcell.Button1 != 0 && a.previousMousEvent.Buttons()&tcell.Button1 == 0 {
 		a.manageMouseClickDown(ev, WmLButtonDown)
+		checkMouseMove = false
 	} else if ev.Buttons()&tcell.Button1 == 0 && a.previousMousEvent.Buttons()&tcell.Button1 != 0 {
 		a.manageMouseClickUp(ev, WmLButtonUp)
+		checkMouseMove = false
 	}
 
 	// Right click
 	// Check if before right click is active
 	if ev.Buttons()&tcell.Button3 != 0 && a.previousMousEvent.Buttons()&tcell.Button3 == 0 {
 		a.manageMouseClickDown(ev, WmRButtonDown)
+		checkMouseMove = false
 	} else if ev.Buttons()&tcell.Button3 == 0 && a.previousMousEvent.Buttons()&tcell.Button3 != 0 {
 		a.manageMouseClickUp(ev, WmRButtonUp)
+		checkMouseMove = false
 	}
 
-	// TODO mouse enter, mouse move, mouse leave
-	// TODO remember the last window to which a mouse message was sent
-
-	// TODO Get cursor type of window to draw cross, hour glass...
 	x, y := ev.Position()
+
+	// Check mouse move only if not click message send
+	if checkMouseMove {
+		_, window := a.findWindowsByCoordinate(x, y)
+
+		if window == nil {
+			// Send mouse leave
+			if a.lastWindowUnderMouse != nil {
+				a.lastWindowUnderMouse.HandleMessage(BuildMouseLeaveMessage(a.lastWindowUnderMouse.Handler()))
+				a.lastWindowUnderMouse = nil
+			}
+		} else {
+			if a.lastWindowUnderMouse == nil {
+				// Send mouve enter
+				window.HandleMessage(BuildMouseEnterMessage(window.Handler(), x, y))
+			} else if a.lastWindowUnderMouse != nil && a.lastWindowUnderMouse.Handler() == window.Handler() {
+				// Mouse move
+			} else {
+				// Send mouse leave
+				a.lastWindowUnderMouse.HandleMessage(BuildMouseLeaveMessage(a.lastWindowUnderMouse.Handler()))
+
+				// Send mouve enter
+				window.HandleMessage(BuildMouseEnterMessage(window.Handler(), x, y))
+			}
+
+			a.lastWindowUnderMouse = window
+		}
+	}
 
 	a.displayMouseCursor(x, y)
 

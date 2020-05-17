@@ -436,6 +436,8 @@ func (w *Window) manageMyMessage(msg base.Message) {
 		w.SetBounds(bounds)
 		// Redraw all components cause maybe overide a component with Zorder
 		w.view.GetMessageBus().Send(base.BuildDrawMessage(base.BroadcastHandler()))
+	default:
+		w.view.HandleMessage(msg)
 	}
 }
 

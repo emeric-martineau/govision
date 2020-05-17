@@ -435,3 +435,136 @@ func TestApplication_Event_mouse_click(t *testing.T) {
 		t.Error("No WmLButtonDown event receive")
 	}
 }
+
+func TestApplication_Mouse_enter_mouse_leave(t *testing.T) {
+	isMouseEnter := false
+	isMouseLeave := false
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow.SetEnabled(true)
+	mainWindow.SetVisible(true)
+	mainWindow.SetBounds(Rect{
+		X:      0,
+		Y:      0,
+		Width:  10,
+		Height: 10,
+	})
+	mainWindow.SetOnReceiveMessage(func(c TComponent, msg Message) bool {
+		if msg.Type == WmMouseEnter {
+			isMouseEnter = true
+		} else if msg.Type == WmMouseLeave {
+			isMouseLeave = true
+
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+
+		return false
+	})
+
+	app.AddWindow(&mainWindow)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.ButtonNone, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(10, 10, tcell.ButtonNone, 0)
+
+		app.Run()
+
+		if !isMouseEnter {
+			t.Error("Error no mouse enter event")
+		}
+
+		if !isMouseLeave {
+			t.Error("Error no mouse enter event")
+		}
+	}
+}
+
+func TestApplication_Mouse_enter_mouse_leave_with_multi_window(t *testing.T) {
+	isMouseEnterMainWindow := false
+	isMouseLeaveMainWindow := false
+	isMouseEnterWindow2 := false
+
+	appConfig := CreateTestApplicationConfig()
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow.SetEnabled(true)
+	mainWindow.SetVisible(true)
+	mainWindow.SetBounds(Rect{
+		X:      0,
+		Y:      0,
+		Width:  10,
+		Height: 10,
+	})
+	mainWindow.SetOnReceiveMessage(func(c TComponent, msg Message) bool {
+		if msg.Type == WmMouseEnter {
+			isMouseEnterMainWindow = true
+		} else if msg.Type == WmMouseLeave {
+			isMouseLeaveMainWindow = true
+
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+
+		return false
+	})
+
+	app.AddWindow(&mainWindow)
+
+	window2 := NewView("window2", appConfig.Message, app.Canvas())
+	window2.SetEnabled(true)
+	window2.SetVisible(true)
+	window2.SetBounds(Rect{
+		X:      10,
+		Y:      10,
+		Width:  10,
+		Height: 10,
+	})
+	window2.SetOnReceiveMessage(func(c TComponent, msg Message) bool {
+		if msg.Type == WmMouseEnter {
+			isMouseEnterWindow2 = true
+		}
+
+		return false
+	})
+
+	app.AddWindow(&window2)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.ButtonNone, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(11, 11, tcell.ButtonNone, 0)
+
+		app.Run()
+
+		if !isMouseEnterMainWindow {
+			t.Error("Error no mouse enter event")
+		}
+
+		if !isMouseLeaveMainWindow {
+			t.Error("Error no mouse enter event")
+		}
+
+		if !isMouseEnterWindow2 {
+			t.Error("Error no mouse enter event (windows2)")
+		}
+	}
+}
