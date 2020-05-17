@@ -26,6 +26,7 @@ import (
 func main() {
 	appConfig := base.CreateDefaultApplicationConfig()
 	application := base.NewApplication(appConfig)
+	application.ShowMouseCursor = true
 
 	mainWindow := components.NewWindow("window1", appConfig.Message, application.Canvas())
 

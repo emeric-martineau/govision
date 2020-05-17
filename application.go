@@ -21,12 +21,22 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+type lastCursorPosAndStyle struct {
+	x     int
+	y     int
+	mainc rune
+	combc []rune
+	style tcell.Style
+}
+
 // Application is base struct for create text UI.
 type Application struct {
 	// Main window.
 	mainWindow TView
 	// Quit application on Ctrl+C.
 	ExitOnCtrlC bool
+	// Show text mouse cursor.
+	ShowMouseCursor bool
 	// Windows list. The First item is Windows that have focus.
 	windowsList *list.List
 	// Message bus.
@@ -35,6 +45,8 @@ type Application struct {
 	canvas applicationCanvas
 	// Keep previous event of mouse to know if cursor move, click...
 	previousMousEvent tcell.EventMouse
+	// Last cursor.
+	lastCursorPosAndStyle lastCursorPosAndStyle
 }
 
 // MainWindow return main windows.
@@ -71,6 +83,8 @@ func (a *Application) Run() {
 	defer a.canvas.screen.Fini()
 
 	a.canvas.screen.Clear()
+
+	a.storeCursorInfo(0, 0)
 
 	applicationHandler := ApplicationHandler()
 
@@ -174,6 +188,17 @@ func (a *applicationCanvas) Fill(bounds Rect) {
 //------------------------------------------------------------------------------
 // Internal functions
 
+func (a *Application) storeCursorInfo(x, y int) {
+	a.lastCursorPosAndStyle.x = x
+	a.lastCursorPosAndStyle.y = y
+
+	mainc, combc, style, _ := a.canvas.screen.GetContent(x, y)
+
+	a.lastCursorPosAndStyle.mainc = mainc
+	a.lastCursorPosAndStyle.combc = combc
+	a.lastCursorPosAndStyle.style = style
+}
+
 func (a *Application) manageMyMessage(msg Message) bool {
 	switch msg.Type {
 	case WmMouse:
@@ -261,6 +286,31 @@ func (a *Application) manageMouseClickUp(ev *tcell.EventMouse, side uint) {
 	window.HandleMessage(BuildClickMouseMessage(window.Handler(), ev, side))
 }
 
+func (a *Application) displayMouseCursor(x, y int) {
+	if a.ShowMouseCursor && (a.lastCursorPosAndStyle.x != x || a.lastCursorPosAndStyle.y != y) {
+		// Cursor move
+		// First restore last position
+		a.canvas.screen.SetContent(
+			a.lastCursorPosAndStyle.x,
+			a.lastCursorPosAndStyle.y,
+			a.lastCursorPosAndStyle.mainc,
+			a.lastCursorPosAndStyle.combc,
+			a.lastCursorPosAndStyle.style)
+
+		// Save current data
+		a.storeCursorInfo(x, y)
+
+		st := a.lastCursorPosAndStyle.style.Reverse(true)
+
+		a.canvas.screen.SetContent(
+			a.lastCursorPosAndStyle.x,
+			a.lastCursorPosAndStyle.y,
+			a.lastCursorPosAndStyle.mainc,
+			a.lastCursorPosAndStyle.combc,
+			st)
+	}
+}
+
 func (a *Application) manageMouseMessage(msg Message) {
 	ev := msg.Value.(*tcell.EventMouse)
 	// Left click
@@ -282,7 +332,10 @@ func (a *Application) manageMouseMessage(msg Message) {
 	// TODO mouse enter, mouse move, mouse leave
 	// TODO remember the last window to which a mouse message was sent
 
-	// TODO draw cursor. Get cursor type of window.
+	// TODO Get cursor type of window to draw cross, hour glass...
+	x, y := ev.Position()
+
+	a.displayMouseCursor(x, y)
 
 	a.previousMousEvent = *ev
 }

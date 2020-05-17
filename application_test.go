@@ -389,6 +389,7 @@ func TestApplication_Event_mouse_click(t *testing.T) {
 	appConfig := CreateTestApplicationConfig()
 
 	app := NewApplication(appConfig)
+	app.ShowMouseCursor = true
 
 	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
 	mainWindow.SetEnabled(true)
