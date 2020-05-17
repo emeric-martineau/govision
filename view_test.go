@@ -31,14 +31,89 @@ func TestView_Dummy_for_code_coverage(t *testing.T) {
 	}
 
 	c := NewView("You know my name", appConfig.Message, &rootCanvas)
+
 	c.SetFocused(true)
-	c.GetFocused()
+
+	if !c.GetFocused() {
+		t.Error("Must be focused")
+	}
+
 	c.SetVisible(true)
-	c.GetVisible()
-	c.SetBackgroundColor(tcell.ColorBlack)
-	c.GetBackgroundColor()
+
+	if !c.GetVisible() {
+		t.Error("Must be visible")
+	}
+
+	c.SetBackgroundColor(tcell.ColorYellow)
+
+	if c.GetBackgroundColor() != tcell.ColorYellow {
+		t.Errorf("Wrong background color: '%d'", c.GetBackgroundColor())
+	}
+
 	c.SetForegroundColor(tcell.ColorBlack)
-	c.GetForegroundColor()
+
+	if c.GetForegroundColor() != tcell.ColorBlack {
+		t.Errorf("Wrong foreground color: '%d'", c.GetForegroundColor())
+	}
+
+	if c.Name() != "You know my name" {
+		t.Errorf("Wrong name: '%s'", c.Name())
+	}
+
+	c.SetEnabled(true)
+
+	if !c.GetEnabled() {
+		t.Error("Must be enable")
+	}
+
+	if c.GetParent() != nil {
+		t.Error("Parent must be nil")
+	}
+
+	c.AddChild(&c)
+	c.RemoveChild(&c)
+
+	if len(c.Children()) != 0 {
+		t.Error("Must be no children!")
+	}
+
+	c.SetZorder(1)
+
+	if c.GetZorder() != 1 {
+		t.Errorf("Wrond zorder: %d", c.GetZorder())
+	}
+
+	c.SetOnEnabled(func(arg1 TComponent, arg2 bool) bool {
+		return arg2
+	})
+
+	if c.GetOnEnabled() == nil {
+		t.Error("Cannot set OnEnable")
+	}
+
+	if c.GetMessageBus() != appConfig.Message {
+		t.Error("Wrong message nus")
+	}
+
+	c.SetOnReceiveMessage(func(arg1 TComponent, arg2 Message) bool {
+		return true
+	})
+
+	if c.GetOnReceiveMessage() == nil {
+		t.Error("Cannot set OnReceiveMessage")
+	}
+
+	c.SetOnDraw(func(arg1 TView) {
+
+	})
+
+	if c.GetOnDraw() == nil {
+		t.Error("Cannot set OnDraw")
+	}
+
+	if c.Canvas() == nil {
+		t.Error("Canvas cannot be nil!")
+	}
 }
 
 func TestView_draw_one_view(t *testing.T) {
