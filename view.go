@@ -30,6 +30,10 @@ type View struct {
 	foregroundColor tcell.Color
 	// To overide draw for custom draw for example.
 	onDraw OnDraw
+	// To overide behavior.
+	onChangeBounds OnChangeBounds
+	// To overide behavior.
+	onActivate OnActivate
 }
 
 //------------------------------------------------------------------------------
@@ -231,6 +235,26 @@ func (v *View) ClientCanvas() TCanvas {
 	return v.canvas.CreateCanvasFrom(v.GetClientBounds())
 }
 
+// SetOnChangeBounds set OnChangeBounds event.
+func (v *View) SetOnChangeBounds(f OnChangeBounds) {
+	v.onChangeBounds = f
+}
+
+// GetOnChangeBounds return OnChangeBounds event.
+func (v *View) GetOnChangeBounds() OnChangeBounds {
+	return v.onChangeBounds
+}
+
+// SetOnActivate set OnActivate event.
+func (v *View) SetOnActivate(f OnActivate) {
+	v.onActivate = f
+}
+
+// GetOnActivate return OnActivate event.
+func (v *View) GetOnActivate() OnActivate {
+	return v.onActivate
+}
+
 //------------------------------------------------------------------------------
 // Internal function.
 
@@ -247,10 +271,18 @@ func (v *View) manageMyMessage(msg Message) {
 			v.component.HandleMessage(BuildDrawMessage(BroadcastHandler()))
 		}
 	case WmChangeBounds:
+		if v.onChangeBounds != nil {
+			v.onChangeBounds(msg.Value.(Rect))
+		}
+
 		v.SetBounds(msg.Value.(Rect))
 		// Redraw all components cause maybe overide a component with Zorder
 		v.component.message.Send(BuildDrawMessage(BroadcastHandler()))
 	case WmActivate:
+		if v.onActivate != nil {
+			v.onActivate(msg.Value == WaActive)
+		}
+
 		v.SetFocused(msg.Value == WaActive)
 	default:
 		v.component.HandleMessage(msg)

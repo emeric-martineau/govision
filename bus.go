@@ -31,7 +31,10 @@ type Bus struct {
 
 // Send a event in bus.
 func (b Bus) Send(e Message) {
-	b.busChannel <- e
+	select {
+	case b.busChannel <- e:
+	default:
+	}
 }
 
 // Channel a event in bus.

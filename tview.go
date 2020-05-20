@@ -21,6 +21,12 @@ import (
 // OnDraw is call when change enable.
 type OnDraw func(TView)
 
+// OnChangeBounds is call when change bounds message receive.
+type OnChangeBounds func(Rect)
+
+// OnActivate is call when set or leave focus
+type OnActivate func(bool)
+
 // TView is the base object of all visual widget.
 type TView interface {
 	TComponent
@@ -48,4 +54,10 @@ type TView interface {
 	ClientCanvas() TCanvas
 	SetOnDraw(OnDraw)
 	GetOnDraw() OnDraw
+	// Change bounds
+	SetOnChangeBounds(OnChangeBounds)
+	GetOnChangeBounds() OnChangeBounds
+	// Activate
+	SetOnActivate(OnActivate)
+	GetOnActivate() OnActivate
 }

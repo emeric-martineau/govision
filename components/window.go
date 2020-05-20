@@ -305,6 +305,26 @@ func (w *Window) GetClientBounds() base.Rect {
 	return calculateClientBounds(w.GetBounds(), w.Border.Type)
 }
 
+// SetOnChangeBounds set OnChangeBounds event.
+func (w *Window) SetOnChangeBounds(f base.OnChangeBounds) {
+	w.view.SetOnChangeBounds(f)
+}
+
+// GetOnChangeBounds return OnChangeBounds event.
+func (w *Window) GetOnChangeBounds() base.OnChangeBounds {
+	return w.view.GetOnChangeBounds()
+}
+
+// SetOnActivate set OnActivate event.
+func (w *Window) SetOnActivate(f base.OnActivate) {
+	w.view.SetOnActivate(f)
+}
+
+// GetOnActivate return OnActivate event.
+func (w *Window) GetOnActivate() base.OnActivate {
+	return w.view.GetOnActivate()
+}
+
 // Draw the view.
 func (w *Window) Draw() {
 	if !w.GetVisible() {
@@ -413,6 +433,7 @@ func drawBorderRight(canvas base.TCanvas, w *Window) {
 // Manage message if it's for me.
 // Return true to stop message propagation.
 func (w *Window) manageMyMessage(msg base.Message) {
+	// TODO OnMouseEnter OnMouseLeave OnMouseDown OnMouseUp OnClick ?
 	switch msg.Type {
 	case base.WmDraw:
 

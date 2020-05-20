@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	"github.com/gdamore/tcell"
+	"github.com/google/uuid"
 )
 
 type lastCursorPosAndStyle struct {
@@ -112,7 +113,7 @@ func (a *Application) Run() {
 		} else if msg.Handler == applicationHandler {
 			doContinue = a.manageMyMessage(msg)
 		} else {
-			a.callFocusedWindowHandleMessage(msg)
+			a.callWindowHandleMessage(msg)
 		}
 
 		a.canvas.screen.Sync()
@@ -207,7 +208,7 @@ func (a *Application) manageMyMessage(msg Message) bool {
 		a.manageMouseMessage(msg)
 	case WmDraw:
 		for e := a.windowsList.Front(); e != nil; e = e.Next() {
-			e.Value.(TComponent).HandleMessage(BuildDrawMessage(BroadcastHandler()))
+			a.message.Send(BuildDrawMessage(BroadcastHandler()))
 		}
 	case WmQuit:
 		return false
@@ -250,6 +251,19 @@ func (a *Application) findWindowsByCoordinate(x int, y int) (*list.Element, TVie
 	return nil, nil
 }
 
+func (a *Application) findWindowsByHandle(handle uuid.UUID) (*list.Element, TView) {
+	var currentWindow TView
+
+	for e := a.windowsList.Front(); e != nil; e = e.Next() {
+		currentWindow = e.Value.(TView)
+		if currentWindow.Handler() == handle {
+			return e, currentWindow
+		}
+	}
+
+	return nil, nil
+}
+
 func (a *Application) manageMouseClickDown(ev *tcell.EventMouse, side uint) {
 	// Ok send event
 	x, y := ev.Position()
@@ -265,13 +279,13 @@ func (a *Application) manageMouseClickDown(ev *tcell.EventMouse, side uint) {
 
 	if window.Handler() == currentFocusedWindow.Handler() {
 		// Send a click message
-		window.HandleMessage(BuildClickMouseMessage(window.Handler(), ev, side))
+		a.message.Send(BuildClickMouseMessage(window.Handler(), ev, side))
 	} else {
 		// Send focus message
 		a.windowsList.MoveToFront(e)
 
-		currentFocusedWindow.HandleMessage(BuildDesactivateMessage(currentFocusedWindow.Handler()))
-		window.HandleMessage(BuildActivateMessage(window.Handler()))
+		a.message.Send(BuildDesactivateMessage(currentFocusedWindow.Handler()))
+		a.message.Send(BuildActivateMessage(window.Handler()))
 	}
 }
 
@@ -285,7 +299,7 @@ func (a *Application) manageMouseClickUp(ev *tcell.EventMouse, side uint) {
 		return
 	}
 
-	window.HandleMessage(BuildClickMouseMessage(window.Handler(), ev, side))
+	a.message.Send(BuildClickMouseMessage(window.Handler(), ev, side))
 }
 
 func (a *Application) displayMouseCursor(x, y int) {
@@ -347,21 +361,21 @@ func (a *Application) manageMouseMessage(msg Message) {
 		if window == nil {
 			// Send mouse leave
 			if a.lastWindowUnderMouse != nil {
-				a.lastWindowUnderMouse.HandleMessage(BuildMouseLeaveMessage(a.lastWindowUnderMouse.Handler()))
+				a.message.Send(BuildMouseLeaveMessage(a.lastWindowUnderMouse.Handler()))
 				a.lastWindowUnderMouse = nil
 			}
 		} else {
 			if a.lastWindowUnderMouse == nil {
 				// Send mouve enter
-				window.HandleMessage(BuildMouseEnterMessage(window.Handler(), x, y))
+				a.message.Send(BuildMouseEnterMessage(window.Handler(), x, y))
 			} else if a.lastWindowUnderMouse != nil && a.lastWindowUnderMouse.Handler() == window.Handler() {
 				// Mouse move
 			} else {
 				// Send mouse leave
-				a.lastWindowUnderMouse.HandleMessage(BuildMouseLeaveMessage(a.lastWindowUnderMouse.Handler()))
+				a.message.Send(BuildMouseLeaveMessage(a.lastWindowUnderMouse.Handler()))
 
 				// Send mouve enter
-				window.HandleMessage(BuildMouseEnterMessage(window.Handler(), x, y))
+				a.message.Send(BuildMouseEnterMessage(window.Handler(), x, y))
 			}
 
 			a.lastWindowUnderMouse = window
@@ -374,11 +388,26 @@ func (a *Application) manageMouseMessage(msg Message) {
 }
 
 // Call focused windows if not nil.
-// Return false if need stop application.
 func (a *Application) callFocusedWindowHandleMessage(msg Message) {
 	w := a.windowsList.Front()
 
 	w.Value.(TView).HandleMessage(msg)
+}
+
+// Call windows by handle.
+func (a *Application) callWindowHandleMessage(msg Message) {
+	if msg.Handler == BroadcastHandler() {
+		var currentWindow TView
+
+		for e := a.windowsList.Front(); e != nil; e = e.Next() {
+			currentWindow = e.Value.(TView)
+			currentWindow.HandleMessage(msg)
+		}
+	} else {
+		_, w := a.findWindowsByHandle(msg.Handler)
+
+		w.HandleMessage(msg)
+	}
 }
 
 // Run in go function to wait keyboard or mouse event.

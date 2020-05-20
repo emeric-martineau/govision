@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/gdamore/tcell"
 )
@@ -113,8 +112,8 @@ func TestApplication_Exit_on_CtrlC_with_two_windows(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
-	window1 := NewView("window2", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window2", appConfig.Message, app.Canvas())
+	window1 := NewView("window3", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
@@ -154,7 +153,7 @@ func TestApplication_Exit_on_WmQuit(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window2", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window4", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
@@ -191,7 +190,7 @@ func TestApplication_Exit_destroy_mainwindow(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window3", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window5", appConfig.Message, app.Canvas())
 
 	mainWindow.SetOnReceiveMessage(func(c TComponent, m Message) bool {
 		appConfig.Message.Send(Message{
@@ -227,7 +226,7 @@ func TestApplication_Canvas_draw(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window6", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
@@ -281,7 +280,7 @@ func TestApplication_Event_resize(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window7", appConfig.Message, app.Canvas())
 
 	app.AddWindow(&mainWindow)
 
@@ -304,10 +303,12 @@ func TestApplication_Event_resize(t *testing.T) {
 
 func eventMouseClickChangeFocus(t *testing.T, x, y int, button tcell.ButtonMask) (TView, TView) {
 	appConfig := CreateTestApplicationConfig()
+	mainWindowIsCalled := false
+	window2IsCalled := false
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window8", appConfig.Message, app.Canvas())
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 	mainWindow.SetBounds(Rect{
@@ -316,10 +317,17 @@ func eventMouseClickChangeFocus(t *testing.T, x, y int, button tcell.ButtonMask)
 		Width:  10,
 		Height: 10,
 	})
+	mainWindow.SetOnActivate(func(s bool) {
+		mainWindowIsCalled = true
+
+		if window2IsCalled {
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+	})
 
 	app.AddWindow(&mainWindow)
 
-	window2 := NewView("window2", appConfig.Message, app.Canvas())
+	window2 := NewView("window9", appConfig.Message, app.Canvas())
 	window2.SetEnabled(true)
 	window2.SetVisible(true)
 	window2.SetBounds(Rect{
@@ -327,6 +335,13 @@ func eventMouseClickChangeFocus(t *testing.T, x, y int, button tcell.ButtonMask)
 		Y:      10,
 		Width:  10,
 		Height: 10,
+	})
+	window2.SetOnActivate(func(s bool) {
+		window2IsCalled = true
+
+		if mainWindowIsCalled {
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
 	})
 
 	app.AddWindow(&window2)
@@ -342,13 +357,6 @@ func eventMouseClickChangeFocus(t *testing.T, x, y int, button tcell.ButtonMask)
 	} else {
 		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(x, y, button, 0)
 		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(x, y, tcell.ButtonNone, 0)
-
-		timer := time.NewTimer(10 * time.Millisecond)
-
-		select {
-		case <-timer.C:
-			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
-		}
 
 		app.Run()
 	}
@@ -381,17 +389,75 @@ func TestApplication_Event_mouse_click_left_change_focus(t *testing.T) {
 }
 
 func TestApplication_Event_mouse_click_out_of_window(t *testing.T) {
-	eventMouseClickChangeFocus(t, 50, 50, tcell.Button1)
+	appConfig := CreateTestApplicationConfig()
+	mainWindowIsCalled := false
+	window2IsCalled := false
+
+	app := NewApplication(appConfig)
+
+	mainWindow := NewView("window10", appConfig.Message, app.Canvas())
+	mainWindow.SetEnabled(true)
+	mainWindow.SetVisible(true)
+	mainWindow.SetBounds(Rect{
+		X:      0,
+		Y:      0,
+		Width:  10,
+		Height: 10,
+	})
+	mainWindow.SetOnActivate(func(s bool) {
+		mainWindowIsCalled = true
+
+		if window2IsCalled {
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+	})
+
+	app.AddWindow(&mainWindow)
+
+	window2 := NewView("window11", appConfig.Message, app.Canvas())
+	window2.SetEnabled(true)
+	window2.SetVisible(true)
+	window2.SetBounds(Rect{
+		X:      10,
+		Y:      10,
+		Width:  10,
+		Height: 10,
+	})
+	window2.SetOnActivate(func(s bool) {
+		window2IsCalled = true
+
+		if mainWindowIsCalled {
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+		}
+	})
+
+	app.AddWindow(&window2)
+
+	if app.MainWindow() != &mainWindow {
+		t.Error("Error main window are different")
+	}
+
+	app.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
+	if e := app.Init(); e != nil {
+		t.Error("Cannot initialize screen")
+	} else {
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(50, 50, tcell.Button1, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(50, 50, tcell.ButtonNone, 0)
+		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
+
+		app.Run()
+	}
 }
 
-func TestApplication_Event_mouse_click(t *testing.T) {
+func TestApplication_Event_mouse_click_out(t *testing.T) {
 	isMouseClick := false
 	appConfig := CreateTestApplicationConfig()
 
 	app := NewApplication(appConfig)
 	app.ShowMouseCursor = true
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window12", appConfig.Message, app.Canvas())
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 	mainWindow.SetBounds(Rect{
@@ -401,8 +467,11 @@ func TestApplication_Event_mouse_click(t *testing.T) {
 		Height: 10,
 	})
 	mainWindow.SetOnReceiveMessage(func(c TComponent, msg Message) bool {
+		fmt.Printf("%+v\n", msg)
 		if msg.Type == WmLButtonDown {
 			isMouseClick = true
+
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
 		}
 
 		return false
@@ -419,14 +488,6 @@ func TestApplication_Event_mouse_click(t *testing.T) {
 		t.Error("Cannot initialize screen")
 	} else {
 		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectMouse(5, 5, tcell.Button1, 0)
-		app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
-
-		timer := time.NewTimer(10 * time.Millisecond)
-
-		select {
-		case <-timer.C:
-			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
-		}
 
 		app.Run()
 	}
@@ -443,7 +504,7 @@ func TestApplication_Mouse_enter_mouse_leave(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window13", appConfig.Message, app.Canvas())
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 	mainWindow.SetBounds(Rect{
@@ -499,7 +560,7 @@ func TestApplication_Mouse_enter_mouse_leave_with_multi_window(t *testing.T) {
 
 	app := NewApplication(appConfig)
 
-	mainWindow := NewView("window1", appConfig.Message, app.Canvas())
+	mainWindow := NewView("window14", appConfig.Message, app.Canvas())
 	mainWindow.SetEnabled(true)
 	mainWindow.SetVisible(true)
 	mainWindow.SetBounds(Rect{
@@ -513,8 +574,6 @@ func TestApplication_Mouse_enter_mouse_leave_with_multi_window(t *testing.T) {
 			isMouseEnterMainWindow = true
 		} else if msg.Type == WmMouseLeave {
 			isMouseLeaveMainWindow = true
-
-			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
 		}
 
 		return false
@@ -522,7 +581,7 @@ func TestApplication_Mouse_enter_mouse_leave_with_multi_window(t *testing.T) {
 
 	app.AddWindow(&mainWindow)
 
-	window2 := NewView("window2", appConfig.Message, app.Canvas())
+	window2 := NewView("window15", appConfig.Message, app.Canvas())
 	window2.SetEnabled(true)
 	window2.SetVisible(true)
 	window2.SetBounds(Rect{
@@ -534,6 +593,7 @@ func TestApplication_Mouse_enter_mouse_leave_with_multi_window(t *testing.T) {
 	window2.SetOnReceiveMessage(func(c TComponent, msg Message) bool {
 		if msg.Type == WmMouseEnter {
 			isMouseEnterWindow2 = true
+			app.Canvas().(*applicationCanvas).screen.(tcell.SimulationScreen).InjectKey(tcell.KeyCtrlC, ' ', tcell.ModCtrl)
 		}
 
 		return false
